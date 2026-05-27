@@ -2169,20 +2169,22 @@ function renderAuthBar() {
 }
 
 function loginWithGoogle() {
-  const mobile = isMobileBrowser();
-  debugLog('loginWithGoogle — isMobile=' + mobile);
+  debugLog('loginWithGoogle — isMobile=' + isMobileBrowser());
   const provider = new firebase.auth.GoogleAuthProvider();
-  if (mobile) {
-    debugLog('→ signInWithRedirect');
-    auth.signInWithRedirect(provider).catch(err => {
-      debugLog('signInWithRedirect err: ' + err.code + ' ' + err.message, 'err');
+  // Popup d'abord : Firefox Android ouvre les popups en onglet et communique
+  // via postMessage (pas affecté par Total Cookie Protection).
+  // On ne bascule sur redirect que si le popup est vraiment bloqué (iOS PWA).
+  auth.signInWithPopup(provider)
+    .then(r => debugLog('signInWithPopup OK: ' + r.user.email))
+    .catch(err => {
+      debugLog('signInWithPopup err: ' + err.code + ' — ' + err.message, 'err');
+      if (err.code === 'auth/popup-blocked') {
+        debugLog('→ popup bloqué, fallback signInWithRedirect');
+        auth.signInWithRedirect(provider);
+      } else if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        alert('Connexion échouée : ' + err.message);
+      }
     });
-  } else {
-    auth.signInWithPopup(provider).catch(err => {
-      debugLog('signInWithPopup err: ' + err.code + ' ' + err.message, 'err');
-      alert('Connexion échouée : ' + err.message);
-    });
-  }
 }
 
 function doLogout() {
