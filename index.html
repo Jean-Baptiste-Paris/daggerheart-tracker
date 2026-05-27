@@ -1036,6 +1036,7 @@ function openForm(id) {
   }
   document.getElementById('form-error').textContent = '';
   showScreen('form');
+  applyFormAccent();
 }
 
 function saveCharacter() {
@@ -1058,6 +1059,7 @@ function saveCharacter() {
   }
   saveChars();
   renderCharList();
+  resetFormAccent();
   showScreen('list');
 }
 
@@ -1940,8 +1942,8 @@ async function openTracker(id) {
    FORM BUTTON EVENTS
    ============================================================ */
 
-document.getElementById('btn-form-back').addEventListener('click',()=>showScreen('list'));
-document.getElementById('btn-form-cancel').addEventListener('click',()=>showScreen('list'));
+document.getElementById('btn-form-back').addEventListener('click',()=>{ resetFormAccent(); showScreen('list'); });
+document.getElementById('btn-form-cancel').addEventListener('click',()=>{ resetFormAccent(); showScreen('list'); });
 document.getElementById('btn-save-char').addEventListener('click',saveCharacter);
 document.getElementById('btn-add-weapon').addEventListener('click',()=>addWeaponRow());
 document.getElementById('btn-add-exp').addEventListener('click',()=>addExpRow());
@@ -2093,6 +2095,17 @@ function setupFormAutoCalc() {
   if (classInput) classInput.addEventListener('input', updateSubclassOptions);
   const levelInput = document.getElementById('f-level');
   if (levelInput) levelInput.addEventListener('input', updateLevelDerived);
+  const colorInput = document.getElementById('f-color');
+  if (colorInput) colorInput.addEventListener('input', applyFormAccent);
+}
+
+function applyFormAccent() {
+  const c = document.getElementById('f-color').value || '#e8c84a';
+  document.getElementById('screen-form').style.setProperty('--accent', c);
+}
+
+function resetFormAccent() {
+  document.getElementById('screen-form').style.removeProperty('--accent');
 }
 
 function init() {
