@@ -1912,8 +1912,8 @@ function setupDiceFloating() {
   const backdrop=document.getElementById('dice-modal-backdrop');
   const closeBtn=document.getElementById('dice-fl-toggle');
   if (!fab||!modal||!backdrop) return;
-  function openDice(){modal.classList.add('open');backdrop.classList.add('open');}
-  function closeDice(){modal.classList.remove('open');backdrop.classList.remove('open');}
+  function openDice(){modal.classList.add('open');backdrop.classList.add('open');fab.classList.remove('visible');}
+  function closeDice(){modal.classList.remove('open');backdrop.classList.remove('open');fab.classList.add('visible');}
   fab.addEventListener('click',openDice);
   if(closeBtn) closeBtn.addEventListener('click',closeDice);
   backdrop.addEventListener('click',closeDice);
