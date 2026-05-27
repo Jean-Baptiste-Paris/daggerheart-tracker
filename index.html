@@ -321,14 +321,14 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
     <div class="fsec-body">
       <div class="form-row cols2">
         <div class="form-field"><label>Nom *</label><input type="text" id="f-name" placeholder="Thelkri"></div>
-        <div class="form-field"><label>Race</label><input type="text" id="f-race" placeholder="Orc"></div>
+        <div class="form-field"><label>Race</label><input type="text" id="f-race" list="list-race" placeholder="Orc" autocomplete="off"></div>
       </div>
       <div class="form-row cols2">
-        <div class="form-field"><label>Classe</label><input type="text" id="f-class" placeholder="Warrior"></div>
-        <div class="form-field"><label>Sous-classe</label><input type="text" id="f-subclass" placeholder="Call of the Brave"></div>
+        <div class="form-field"><label>Classe</label><input type="text" id="f-class" list="list-class" placeholder="Warrior" autocomplete="off"></div>
+        <div class="form-field"><label>Sous-classe</label><input type="text" id="f-subclass" list="list-subclass" placeholder="Call of the Brave" autocomplete="off"></div>
       </div>
       <div class="form-row cols2">
-        <div class="form-field"><label>Communauté</label><input type="text" id="f-community" placeholder="Slyborne"></div>
+        <div class="form-field"><label>Communauté</label><input type="text" id="f-community" list="list-community" placeholder="Slyborne" autocomplete="off"></div>
         <div class="form-field"><label>Background (optionnel)</label><input type="text" id="f-bg" placeholder="ex: Ex-mercenaire"></div>
       </div>
       <div class="form-row" style="grid-template-columns:auto 1fr;gap:12px;align-items:center">
@@ -458,6 +458,27 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
 
 <div id="drop-overlay">Lâcher le .json pour importer</div>
 
+<!-- Datalists for form selects -->
+<datalist id="list-race">
+  <option value="Clank"><option value="Drakona"><option value="Nain">
+  <option value="Elfe"><option value="Faun"><option value="Firbolg">
+  <option value="Fungril"><option value="Galapa"><option value="Géant">
+  <option value="Gobelin"><option value="Halfling"><option value="Humain">
+  <option value="Infernis"><option value="Katari"><option value="Orc">
+  <option value="Ribbet"><option value="Simiah"><option value="Sylvain">
+</datalist>
+<datalist id="list-class">
+  <option value="Bard"><option value="Druid"><option value="Guardian">
+  <option value="Ranger"><option value="Rogue"><option value="Seraph">
+  <option value="Sorcerer"><option value="Warrior"><option value="Wizard">
+</datalist>
+<datalist id="list-subclass"></datalist>
+<datalist id="list-community">
+  <option value="Loreborne"><option value="Orderborne"><option value="Ridgeborne">
+  <option value="Seaborne"><option value="Slyborne"><option value="Wanderborne">
+  <option value="Wildborne">
+</datalist>
+
 <script>
 'use strict';
 
@@ -475,6 +496,18 @@ const TRAIT_VERBS  = [
   'Charmer\nPerformer\nTromper',
   'Mémoriser\nAnalyser\nComprendre'
 ];
+
+const CLASS_SUBCLASSES = {
+  'Bard':     ['Wordsmith', 'Troubadour'],
+  'Druid':    ['Warden of the Elements', 'Warden of Renewal'],
+  'Guardian': ['Stalwart', 'Vengeance'],
+  'Ranger':   ['Beastbound', 'Wayfinder'],
+  'Rogue':    ['Syndicate', 'Nightwalker'],
+  'Seraph':   ['Winged Sentinel', 'Winged Zealot'],
+  'Sorcerer': ['Primal Origin', 'Leyline Walker'],
+  'Warrior':  ['Call of the Brave', 'Call of the Slaughter'],
+  'Wizard':   ['School of Knowledge', 'School of War']
+};
 
 const STORAGE_CHARS = 'daggerheart-chars-v1';
 const stateKey = id => 'daggerheart-state-' + id;
@@ -2016,11 +2049,20 @@ function updateThrCalc() {
   else preview.style.display = 'none';
 }
 
+function updateSubclassOptions() {
+  const cls = document.getElementById('f-class').value;
+  const subs = CLASS_SUBCLASSES[cls] || [];
+  document.getElementById('list-subclass').innerHTML =
+    subs.map(s => `<option value="${esc(s)}">`).join('');
+}
+
 function setupFormAutoCalc() {
   ['f-thr-minor-base','f-thr-severe-base','f-level'].forEach(id=>{
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', updateThrCalc);
   });
+  const classInput = document.getElementById('f-class');
+  if (classInput) classInput.addEventListener('input', updateSubclassOptions);
 }
 
 function init() {
