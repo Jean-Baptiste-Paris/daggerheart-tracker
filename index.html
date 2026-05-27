@@ -2077,27 +2077,33 @@ function init() {
   document.getElementById('btn-login').addEventListener('click', loginWithGoogle);
   document.getElementById('btn-logout').addEventListener('click', doLogout);
 
-  // Afficher les données locales immédiatement (avant que Firebase réponde)
-  const local = loadChars();
-  chars = (local && local.length > 0) ? local : [THELKRI_DEF];
-  if (!local) localStorage.setItem(STORAGE_CHARS, JSON.stringify(chars));
+  // Liste vide pendant le chargement
+  chars = [];
   renderCharList();
   showScreen('list');
 
-  // Puis synchroniser avec Firestore quand l'auth est résolue
   auth.onAuthStateChanged(async user => {
     currentUser = user;
     renderAuthBar();
-    if (!user) return;
 
-    const fsChars = await fsLoadChars();
-    if (fsChars && fsChars.length > 0) {
-      chars = fsChars;
-      localStorage.setItem(STORAGE_CHARS, JSON.stringify(chars));
-      renderCharList();
-    } else if (chars.length > 0) {
-      fsSaveChars(); // Premier login : sync le local vers le cloud
+    if (user) {
+      const fsChars = await fsLoadChars();
+      if (fsChars && fsChars.length > 0) {
+        chars = fsChars;
+        localStorage.setItem(STORAGE_CHARS, JSON.stringify(chars));
+      } else {
+        // Nouveau compte : on regarde si des données locales pré-existent à migrer
+        const local = loadChars();
+        chars = (local && local.length > 0) ? local : [];
+        if (chars.length > 0) fsSaveChars();
+      }
+    } else {
+      // Non connecté : cache local uniquement
+      const local = loadChars();
+      chars = (local && local.length > 0) ? local : [];
     }
+
+    renderCharList();
   });
 }
 
