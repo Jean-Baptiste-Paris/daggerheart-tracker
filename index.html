@@ -86,6 +86,7 @@ input[type=checkbox]{accent-color:var(--accent)}
 .form-row.cols4{grid-template-columns:repeat(4,1fr)}
 .form-field{display:flex;flex-direction:column;gap:3px}
 .form-field label{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:700}
+.combo-text{display:none;margin-top:4px}
 .traits-form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .trait-fcell{background:var(--panel-2);border:1px solid var(--border);border-radius:4px;padding:8px;text-align:center}
 .trait-fcell .tfname{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--accent);font-weight:700;margin-bottom:4px}
@@ -325,15 +326,68 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
         <div class="form-field"><label>Nom *</label><input type="text" id="f-name" placeholder="Thelkri"></div>
       </div>
       <div class="form-row cols2">
-        <div class="form-field"><label>Ancestralité</label><input type="text" id="f-race" list="list-race" placeholder="Orc" autocomplete="off"></div>
-        <div class="form-field"><label>Sang-mêlé <span style="color:var(--muted);font-weight:400">(optionnel)</span></label><input type="text" id="f-race2" list="list-race" placeholder="—" autocomplete="off"></div>
+        <div class="form-field">
+          <label>Ancestralité</label>
+          <select id="f-race-sel" data-combo="f-race">
+            <option value="">— choisir —</option>
+            <option>Clank</option><option>Drakona</option><option>Nain</option>
+            <option>Elfe</option><option>Faun</option><option>Firbolg</option>
+            <option>Fungril</option><option>Galapa</option><option>Géant</option>
+            <option>Gobelin</option><option>Halfling</option><option>Humain</option>
+            <option>Infernis</option><option>Katari</option><option>Orc</option>
+            <option>Ribbet</option><option>Simiah</option><option>Sylvain</option>
+            <option value="__autre__">Autre…</option>
+          </select>
+          <input type="text" id="f-race" class="combo-text" placeholder="Ancestralité personnalisée">
+        </div>
+        <div class="form-field">
+          <label>Sang-mêlé <span style="color:var(--muted);font-weight:400">(optionnel)</span></label>
+          <select id="f-race2-sel" data-combo="f-race2">
+            <option value="">— aucun —</option>
+            <option>Clank</option><option>Drakona</option><option>Nain</option>
+            <option>Elfe</option><option>Faun</option><option>Firbolg</option>
+            <option>Fungril</option><option>Galapa</option><option>Géant</option>
+            <option>Gobelin</option><option>Halfling</option><option>Humain</option>
+            <option>Infernis</option><option>Katari</option><option>Orc</option>
+            <option>Ribbet</option><option>Simiah</option><option>Sylvain</option>
+            <option value="__autre__">Autre…</option>
+          </select>
+          <input type="text" id="f-race2" class="combo-text" placeholder="Ancestralité personnalisée">
+        </div>
       </div>
       <div class="form-row cols2">
-        <div class="form-field"><label>Classe</label><input type="text" id="f-class" list="list-class" placeholder="Warrior" autocomplete="off"></div>
-        <div class="form-field"><label>Sous-classe</label><input type="text" id="f-subclass" list="list-subclass" placeholder="Call of the Brave" autocomplete="off"></div>
+        <div class="form-field">
+          <label>Classe</label>
+          <select id="f-class-sel" data-combo="f-class">
+            <option value="">— choisir —</option>
+            <option>Bard</option><option>Druid</option><option>Guardian</option>
+            <option>Ranger</option><option>Rogue</option><option>Seraph</option>
+            <option>Sorcerer</option><option>Warrior</option><option>Wizard</option>
+            <option value="__autre__">Autre…</option>
+          </select>
+          <input type="text" id="f-class" class="combo-text" placeholder="Classe personnalisée">
+        </div>
+        <div class="form-field">
+          <label>Sous-classe</label>
+          <select id="f-subclass-sel" data-combo="f-subclass">
+            <option value="">— choisir —</option>
+            <option value="__autre__">Autre…</option>
+          </select>
+          <input type="text" id="f-subclass" class="combo-text" placeholder="Sous-classe personnalisée">
+        </div>
       </div>
       <div class="form-row cols2">
-        <div class="form-field"><label>Communauté</label><input type="text" id="f-community" list="list-community" placeholder="Slyborne" autocomplete="off"></div>
+        <div class="form-field">
+          <label>Communauté</label>
+          <select id="f-community-sel" data-combo="f-community">
+            <option value="">— choisir —</option>
+            <option>Loreborne</option><option>Orderborne</option><option>Ridgeborne</option>
+            <option>Seaborne</option><option>Slyborne</option><option>Wanderborne</option>
+            <option>Wildborne</option>
+            <option value="__autre__">Autre…</option>
+          </select>
+          <input type="text" id="f-community" class="combo-text" placeholder="Communauté personnalisée">
+        </div>
         <div class="form-field"><label>Background <span style="color:var(--muted);font-weight:400">(optionnel)</span></label><input type="text" id="f-bg" placeholder="ex: Ex-mercenaire"></div>
       </div>
       <div class="form-row cols2">
@@ -462,34 +516,6 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
 
 <div id="drop-overlay">Lâcher le .json pour importer</div>
 
-<!-- Datalists for form selects -->
-<datalist id="list-race">
-  <option value="Clank"><option value="Drakona"><option value="Nain">
-  <option value="Elfe"><option value="Faun"><option value="Firbolg">
-  <option value="Fungril"><option value="Galapa"><option value="Géant">
-  <option value="Gobelin"><option value="Halfling"><option value="Humain">
-  <option value="Infernis"><option value="Katari"><option value="Orc">
-  <option value="Ribbet"><option value="Simiah"><option value="Sylvain">
-</datalist>
-<datalist id="list-class">
-  <option value="Bard"><option value="Druid"><option value="Guardian">
-  <option value="Ranger"><option value="Rogue"><option value="Seraph">
-  <option value="Sorcerer"><option value="Warrior"><option value="Wizard">
-</datalist>
-<datalist id="list-subclass"></datalist>
-<datalist id="list-trait">
-  <option value="Agility"><option value="Strength"><option value="Finesse">
-  <option value="Instinct"><option value="Presence"><option value="Knowledge">
-</datalist>
-<datalist id="list-range">
-  <option value="Melee"><option value="Very Close"><option value="Close">
-  <option value="Far"><option value="Very Far">
-</datalist>
-<datalist id="list-community">
-  <option value="Loreborne"><option value="Orderborne"><option value="Ridgeborne">
-  <option value="Seaborne"><option value="Slyborne"><option value="Wanderborne">
-  <option value="Wildborne">
-</datalist>
 
 <script>
 'use strict';
@@ -795,8 +821,16 @@ function addWeaponRow(w={}) {
       <div class="form-field"><label>Type (ex: Primary · 2H)</label><input type="text" class="w-kind" value="${esc(w.kind||'')}"></div>
     </div>
     <div class="form-row cols3">
-      <div class="form-field"><label>Trait</label><input type="text" class="w-trait" list="list-trait" value="${esc(w.trait||'')}" placeholder="Agility" autocomplete="off"></div>
-      <div class="form-field"><label>Portée</label><input type="text" class="w-range" list="list-range" value="${esc(w.range||'')}" placeholder="Melee" autocomplete="off"></div>
+      <div class="form-field"><label>Trait</label>
+        <select class="w-trait">
+          <option value="">— trait —</option>
+          ${['Agility','Strength','Finesse','Instinct','Presence','Knowledge'].map(t=>`<option${w.trait===t?' selected':''}>${t}</option>`).join('')}
+        </select></div>
+      <div class="form-field"><label>Portée</label>
+        <select class="w-range">
+          <option value="">— portée —</option>
+          ${['Melee','Very Close','Close','Far','Very Far'].map(r=>`<option${w.range===r?' selected':''}>${r}</option>`).join('')}
+        </select></div>
       <div class="form-field"><label>Formule de base <span style="color:var(--accent);font-size:9px">(prof. × dés auto)</span></label><input type="text" class="w-formula" value="${esc(w.formula||'')}" placeholder="d10+6"></div>
     </div>
     <div class="form-row" style="grid-template-columns:1fr auto auto;align-items:end;gap:8px">
@@ -909,12 +943,12 @@ function clearFormRows() {
 
 function populateFormFromDef(def) {
   document.getElementById('f-name').value = def.name||'';
-  document.getElementById('f-race').value = def.race||'';
-  document.getElementById('f-race2').value = def.race2||'';
-  document.getElementById('f-class').value = def.class||'';
+  setCombo('f-race-sel', 'f-race', def.race||'');
+  setCombo('f-race2-sel', 'f-race2', def.race2||'');
+  setCombo('f-class-sel', 'f-class', def.class||'');
   updateSubclassOptions();
-  document.getElementById('f-subclass').value = def.subclass||'';
-  document.getElementById('f-community').value = def.community||'';
+  setCombo('f-subclass-sel', 'f-subclass', def.subclass||'');
+  setCombo('f-community-sel', 'f-community', def.community||'');
   document.getElementById('f-bg').value = def.background||'';
   document.getElementById('f-level').value = def.level||1;
   document.getElementById('f-prof').value = def.proficiency||1;
@@ -997,11 +1031,11 @@ function readFormValues() {
 
   return {
     name: document.getElementById('f-name').value.trim(),
-    race: document.getElementById('f-race').value.trim(),
-    race2: document.getElementById('f-race2').value.trim(),
-    class: document.getElementById('f-class').value.trim(),
-    subclass: document.getElementById('f-subclass').value.trim(),
-    community: document.getElementById('f-community').value.trim(),
+    race: readCombo('f-race-sel', 'f-race'),
+    race2: readCombo('f-race2-sel', 'f-race2'),
+    class: readCombo('f-class-sel', 'f-class'),
+    subclass: readCombo('f-subclass-sel', 'f-subclass'),
+    community: readCombo('f-community-sel', 'f-community'),
     background: document.getElementById('f-bg').value.trim(),
     level: parseInt(document.getElementById('f-level').value)||1,
     proficiency: parseInt(document.getElementById('f-prof').value)||1,
@@ -2061,6 +2095,35 @@ async function fsSaveState(charId, stateObj) {
 }
 
 /* ============================================================
+   FORM — COMBO SELECT HELPERS
+   ============================================================ */
+
+function readCombo(selId, textId) {
+  const sel = document.getElementById(selId);
+  const txt = document.getElementById(textId);
+  if (!sel) return txt ? txt.value.trim() : '';
+  if (sel.value === '__autre__') return txt ? txt.value.trim() : '';
+  return sel.value;
+}
+
+function setCombo(selId, textId, value) {
+  const sel = document.getElementById(selId);
+  const txt = document.getElementById(textId);
+  if (!sel) return;
+  const exists = value && Array.from(sel.options).some(o => o.value === value && o.value !== '' && o.value !== '__autre__');
+  if (!value) {
+    sel.value = '';
+    if (txt) { txt.style.display = 'none'; txt.value = ''; }
+  } else if (exists) {
+    sel.value = value;
+    if (txt) { txt.style.display = 'none'; txt.value = ''; }
+  } else {
+    sel.value = '__autre__';
+    if (txt) { txt.style.display = ''; txt.value = value; }
+  }
+}
+
+/* ============================================================
    FORM — THRESHOLD AUTO-CALC
    ============================================================ */
 
@@ -2082,10 +2145,18 @@ function updateLevelDerived() {
 }
 
 function updateSubclassOptions() {
-  const cls = document.getElementById('f-class').value;
+  const classSel = document.getElementById('f-class-sel');
+  const cls = (classSel && classSel.value !== '__autre__' && classSel.value !== '')
+    ? classSel.value
+    : (document.getElementById('f-class') ? document.getElementById('f-class').value.trim() : '');
   const subs = CLASS_SUBCLASSES[cls] || [];
-  document.getElementById('list-subclass').innerHTML =
-    subs.map(s => `<option value="${esc(s)}">`).join('');
+  const subSel = document.getElementById('f-subclass-sel');
+  if (!subSel) return;
+  subSel.innerHTML = `<option value="">— choisir —</option>` +
+    subs.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('') +
+    `<option value="__autre__">Autre…</option>`;
+  const txt = document.getElementById('f-subclass');
+  if (txt) { txt.style.display = 'none'; txt.value = ''; }
 }
 
 function setupFormAutoCalc() {
@@ -2093,12 +2164,22 @@ function setupFormAutoCalc() {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', updateThrCalc);
   });
-  const classInput = document.getElementById('f-class');
-  if (classInput) classInput.addEventListener('input', updateSubclassOptions);
   const levelInput = document.getElementById('f-level');
   if (levelInput) levelInput.addEventListener('input', updateLevelDerived);
   const colorInput = document.getElementById('f-color');
   if (colorInput) colorInput.addEventListener('input', applyFormAccent);
+  // Delegated handler for all data-combo selects
+  const formScreen = document.getElementById('screen-form');
+  if (formScreen) formScreen.addEventListener('change', e => {
+    const sel = e.target.closest('select[data-combo]');
+    if (!sel) return;
+    const txt = document.getElementById(sel.dataset.combo);
+    if (txt) {
+      if (sel.value === '__autre__') { txt.style.display = ''; txt.focus(); }
+      else { txt.style.display = 'none'; txt.value = ''; }
+    }
+    if (sel.id === 'f-class-sel') updateSubclassOptions();
+  });
 }
 
 function applyFormAccent() {
