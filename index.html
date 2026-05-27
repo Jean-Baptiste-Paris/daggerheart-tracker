@@ -341,7 +341,7 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
       </div>
       <div class="form-row cols3">
         <div class="form-field"><label>Niveau</label><input type="number" id="f-level" min="1" max="10" value="1"></div>
-        <div class="form-field"><label>Proficiency</label><input type="number" id="f-prof" min="1" max="6" value="1"></div>
+        <div class="form-field"><label>Proficiency <span style="color:var(--muted);font-weight:400">(≈ niveau, auto)</span></label><input type="number" id="f-prof" min="1" max="6" value="1"></div>
         <div class="form-field"><label>Tier</label><input type="number" id="f-tier" min="1" max="4" value="1"></div>
       </div>
     </div>
@@ -474,6 +474,14 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
   <option value="Sorcerer"><option value="Warrior"><option value="Wizard">
 </datalist>
 <datalist id="list-subclass"></datalist>
+<datalist id="list-trait">
+  <option value="Agility"><option value="Strength"><option value="Finesse">
+  <option value="Instinct"><option value="Presence"><option value="Knowledge">
+</datalist>
+<datalist id="list-range">
+  <option value="Melee"><option value="Very Close"><option value="Close">
+  <option value="Far"><option value="Very Far">
+</datalist>
 <datalist id="list-community">
   <option value="Loreborne"><option value="Orderborne"><option value="Ridgeborne">
   <option value="Seaborne"><option value="Slyborne"><option value="Wanderborne">
@@ -497,6 +505,8 @@ const TRAIT_VERBS  = [
   'Charmer\nPerformer\nTromper',
   'Mémoriser\nAnalyser\nComprendre'
 ];
+
+const DMG_LABELS = { phy: 'phys.', mag: 'mag.' };
 
 const CLASS_SUBCLASSES = {
   'Bard':     ['Wordsmith', 'Troubadour'],
@@ -782,12 +792,19 @@ function addWeaponRow(w={}) {
       <div class="form-field"><label>Type (ex: Primary · 2H)</label><input type="text" class="w-kind" value="${esc(w.kind||'')}"></div>
     </div>
     <div class="form-row cols3">
-      <div class="form-field"><label>Trait</label><input type="text" class="w-trait" value="${esc(w.trait||'')}" placeholder="Agility"></div>
-      <div class="form-field"><label>Portée</label><input type="text" class="w-range" value="${esc(w.range||'')}" placeholder="Melee"></div>
+      <div class="form-field"><label>Trait</label><input type="text" class="w-trait" list="list-trait" value="${esc(w.trait||'')}" placeholder="Agility" autocomplete="off"></div>
+      <div class="form-field"><label>Portée</label><input type="text" class="w-range" list="list-range" value="${esc(w.range||'')}" placeholder="Melee" autocomplete="off"></div>
       <div class="form-field"><label>Formule de base <span style="color:var(--accent);font-size:9px">(prof. × dés auto)</span></label><input type="text" class="w-formula" value="${esc(w.formula||'')}" placeholder="d10+6"></div>
     </div>
-    <div class="form-row" style="grid-template-columns:1fr auto;align-items:end">
+    <div class="form-row" style="grid-template-columns:1fr auto auto;align-items:end;gap:8px">
       <div class="form-field"><label>Feature / note</label><input type="text" class="w-feature" value="${esc(w.feature||'')}"></div>
+      <div class="form-field">
+        <label>Type</label>
+        <select class="w-dmg-type" style="width:auto">
+          <option value="phy"${(!w.dmgType||w.dmgType==='phy')?' selected':''}>Phys.</option>
+          <option value="mag"${w.dmgType==='mag'?' selected':''}>Mag.</option>
+        </select>
+      </div>
       <div class="form-field"><label style="white-space:nowrap">Formule finale <span style="color:var(--muted);font-size:9px">(pas de prof.)</span></label><input type="checkbox" class="w-effective" ${w.effective?'checked':''}></div>
     </div>`;
   div.querySelector('.btn-del-row').addEventListener('click',()=>div.remove());
@@ -937,7 +954,7 @@ function readFormValues() {
     trait: row.querySelector('.w-trait').value.trim(),
     range: row.querySelector('.w-range').value.trim(),
     formula: row.querySelector('.w-formula').value.trim(),
-    dmgType: 'phy',
+    dmgType: row.querySelector('.w-dmg-type').value || 'phy',
     feature: row.querySelector('.w-feature').value.trim(),
     effective: row.querySelector('.w-effective').checked
   })).filter(w=>w.name);
@@ -1092,8 +1109,8 @@ function buildTrackerHTML(def) {
         <div class="wname">${esc(w.name)}</div>
         <div class="wkind">${esc(w.kind)}</div>
       </div>
-      ${w.effective && w.formula ? `<div class="big">${esc(w.formula)} ${esc(w.dmgType||'')}</div>` : ''}
-      ${!w.effective && w.formula ? `<div class="wstats">${w.trait?esc(w.trait)+' · ':''}${w.range?esc(w.range)+' · ':''}Dégâts <b>${esc(effectiveWeaponFormula(w,def.proficiency))}</b> ${esc(w.dmgType||'')} <span style="color:var(--muted);font-size:10px">(base ${esc(w.formula)})</span></div>` : ''}
+      ${w.effective && w.formula ? `<div class="big">${esc(w.formula)} <span style="font-size:14px;font-weight:400">${DMG_LABELS[w.dmgType]||w.dmgType||''}</span></div>` : ''}
+      ${!w.effective && w.formula ? `<div class="wstats">${w.trait?esc(w.trait)+' · ':''}${w.range?esc(w.range)+' · ':''}Dégâts <b>${esc(effectiveWeaponFormula(w,def.proficiency))}</b> <span style="color:${w.dmgType==='mag'?'var(--fear)':'var(--muted)'}">${DMG_LABELS[w.dmgType]||w.dmgType||''}</span> <span style="color:var(--muted);font-size:10px">(base ${esc(w.formula)})</span></div>` : ''}
       ${w.feature ? `<div class="wfeat">${esc(w.feature)}</div>` : ''}
     </div>`).join('');
 
@@ -2054,6 +2071,11 @@ function updateThrCalc() {
   else preview.style.display = 'none';
 }
 
+function updateLevelDerived() {
+  const level = parseInt(document.getElementById('f-level').value) || 1;
+  document.getElementById('f-prof').value = Math.min(level, 6);
+}
+
 function updateSubclassOptions() {
   const cls = document.getElementById('f-class').value;
   const subs = CLASS_SUBCLASSES[cls] || [];
@@ -2068,6 +2090,8 @@ function setupFormAutoCalc() {
   });
   const classInput = document.getElementById('f-class');
   if (classInput) classInput.addEventListener('input', updateSubclassOptions);
+  const levelInput = document.getElementById('f-level');
+  if (levelInput) levelInput.addEventListener('input', updateLevelDerived);
 }
 
 function init() {
