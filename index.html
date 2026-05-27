@@ -590,7 +590,7 @@ const THELKRI_DEF = {
   features: [
     {type:'reaction',name:'Attack of Opportunity',cost:'',source:'',desc:'Si un adversaire en Melee tente de partir, reaction roll (trait au choix) contre sa Difficulty. Sur succès, choisir 1 effet (2 sur critique) : ne peut pas bouger / inflige dégâts arme principale / se déplace avec lui.'},
     {type:'passive',name:'Combat Training',cost:'',source:'',desc:'Ignore le burden. Dégâts physiques : bonus = niveau (+2).'},
-    {type:'action',name:'No Mercy',cost:'3 Hope',source:'',desc:'+1 aux attack rolls jusqu\'au prochain repos.'},
+    {type:'action',name:'No Mercy',cost:'3 Hope',source:'',desc:'+1 aux attack rolls jusqu\'au prochain repos.',rollBonus:1},
     {type:'passive',name:'Courage',cost:'',source:'Call of the Brave',desc:'Rate un roll avec Fear : gagner 1 Hope.'},
     {type:'action',name:'Battle Ritual',cost:'1x/long rest',source:'',desc:'Avant un défi clairement supérieur, décrire le rituel, clear 2 Stress + gagner 2 Hope.'},
     {type:'passive',name:'Sturdy',cost:'',source:'Orc',desc:'À 1 PV restant, les attaques ont disadvantage contre toi.'},
@@ -887,7 +887,7 @@ function addFeatureRow(f={}) {
     </div>
     <div class="form-row cols2">
       <div class="form-field"><label>Source (ex: Orc)</label><input type="text" class="f-source" value="${esc(f.source||'')}"></div>
-      <div class="form-field"></div>
+      <div class="form-field"><label>Bonus jet <span style="color:var(--muted);font-weight:400">(ex: +1, laisser vide si aucun)</span></label><input type="number" class="f-roll-bonus" value="${f.rollBonus||''}" placeholder="0" min="-5" max="5" style="width:70px"></div>
     </div>
     <div class="form-field"><label>Description</label><textarea class="f-desc" rows="2">${esc(f.desc||'')}</textarea></div>`;
   div.querySelector('.btn-del-row').addEventListener('click',()=>div.remove());
@@ -900,9 +900,10 @@ function addDomainRow(d={}) {
   div.className = 'dyn-row';
   div.innerHTML = `
     <div class="dyn-row-hd"><span>Domain Card</span><button class="tiny danger btn-del-row">✕</button></div>
-    <div class="form-row cols2">
+    <div class="form-row cols3">
       <div class="form-field"><label>Nom</label><input type="text" class="d-name" value="${esc(d.name||'')}"></div>
       <div class="form-field"><label>Source (ex: Blade · Niv. 1)</label><input type="text" class="d-source" value="${esc(d.source||'')}"></div>
+      <div class="form-field"><label>Bonus jet <span style="color:var(--muted);font-weight:400">(laisser vide si aucun)</span></label><input type="number" class="d-roll-bonus" value="${d.rollBonus||''}" placeholder="0" min="-5" max="5" style="width:70px"></div>
     </div>
     <div class="form-field"><label>Description</label><textarea class="d-desc" rows="2">${esc(d.desc||'')}</textarea></div>`;
   div.querySelector('.btn-del-row').addEventListener('click',()=>div.remove());
@@ -1009,13 +1010,15 @@ function readFormValues() {
     name: row.querySelector('.f-name').value.trim(),
     cost: row.querySelector('.f-cost').value.trim(),
     source: row.querySelector('.f-source').value.trim(),
-    desc: row.querySelector('.f-desc').value.trim()
+    desc: row.querySelector('.f-desc').value.trim(),
+    rollBonus: parseInt(row.querySelector('.f-roll-bonus').value)||0
   })).filter(f=>f.name);
 
   const domains = Array.from(document.querySelectorAll('#domains-rows .dyn-row')).map(row=>({
     name: row.querySelector('.d-name').value.trim(),
     source: row.querySelector('.d-source').value.trim(),
-    desc: row.querySelector('.d-desc').value.trim()
+    desc: row.querySelector('.d-desc').value.trim(),
+    rollBonus: parseInt(row.querySelector('.d-roll-bonus').value)||0
   })).filter(d=>d.name);
 
   const togglesDef = Array.from(document.querySelectorAll('#toggles-rows .dyn-row')).map((row,i)=>({
@@ -1212,6 +1215,16 @@ function buildTrackerHTML(def) {
     `<button class="mod-btn" data-exp="${e.key}">${esc(e.name)} +${e.val}</button>`
   ).join('');
 
+  // Dice roller bonus buttons (features + domain cards with rollBonus)
+  const bonusBtnsHTML = [
+    ...(def.features||[]).filter(f=>f.rollBonus),
+    ...(def.domains||[]).filter(d=>d.rollBonus)
+  ].map(item=>{
+    const key = item.name.replace(/\s+/g,'-').toLowerCase();
+    const sign = item.rollBonus > 0 ? '+' : '';
+    return `<button class="mod-btn" data-bonus-key="${esc(key)}" data-bonus-val="${item.rollBonus}">${esc(item.name)} ${sign}${item.rollBonus}</button>`;
+  }).join('');
+
   return `
     <div class="tracker-header">
       <div class="ident">
@@ -1310,6 +1323,7 @@ function buildTrackerHTML(def) {
             <button class="mod-btn" data-mod-flag="crit">Crit dégâts</button>
           </div>
           ${expBtnsHTML ? `<div class="dice-mod-row"><span class="dice-mod-label">Exp (1 Hope)</span>${expBtnsHTML}</div>` : ''}
+          ${bonusBtnsHTML ? `<div class="dice-mod-row"><span class="dice-mod-label">Bonus actifs</span>${bonusBtnsHTML}</div>` : ''}
         </div>
         <div class="dice-section">
           <div class="dice-label">Trait — Dualité 2d12</div>
@@ -1553,7 +1567,7 @@ function renderInventory() {
    TRACKER — EVENTS
    ============================================================ */
 
-const diceState = {advDis:'normal',experiences:{},critDamage:false,history:[]};
+const diceState = {advDis:'normal',experiences:{},bonuses:{},critDamage:false,history:[]};
 
 function initTrackerEvents() {
   // Init diceState.experiences
@@ -1562,6 +1576,9 @@ function initTrackerEvents() {
   diceState.history=[];
   diceState.experiences={};
   (charDef.experiences||[]).forEach(e=>{ diceState.experiences[e.key]=false; });
+  diceState.bonuses={};
+  [...(charDef.features||[]).filter(f=>f.rollBonus),...(charDef.domains||[]).filter(d=>d.rollBonus)]
+    .forEach(item=>{ diceState.bonuses[item.name.replace(/\s+/g,'-').toLowerCase()]=0; });
 
   // Counter pips + +/- buttons
   document.querySelectorAll('.counter').forEach(root=>{
@@ -1753,6 +1770,7 @@ function refreshModButtons() {
   document.querySelectorAll('[data-advdis]').forEach(b=>b.classList.toggle('active',diceState.advDis===b.dataset.advdis));
   document.querySelectorAll('[data-exp]').forEach(b=>b.classList.toggle('active',!!diceState.experiences[b.dataset.exp]));
   document.querySelectorAll('[data-mod-flag="crit"]').forEach(b=>b.classList.toggle('active',diceState.critDamage));
+  document.querySelectorAll('[data-bonus-key]').forEach(b=>b.classList.toggle('active',!!diceState.bonuses[b.dataset.bonusKey]));
 }
 
 function parseFormula(s) {
@@ -1796,7 +1814,8 @@ function rollDuality(traitMod, label) {
   let advDie=0, advDieRoll=0;
   if(diceState.advDis==='adv'){advDieRoll=rollDie(6);advDie=advDieRoll;}
   else if(diceState.advDis==='dis'){advDieRoll=rollDie(6);advDie=-advDieRoll;}
-  const total=hopeDie+fearDie+traitMod+advDie+expBonus;
+  const bonusTotal=Object.values(diceState.bonuses).reduce((s,v)=>s+(v||0),0);
+  const total=hopeDie+fearDie+traitMod+advDie+expBonus+bonusTotal;
   const isCrit=hopeDie===fearDie;
   const withHope=isCrit||hopeDie>fearDie;
   const withFear=!isCrit&&fearDie>hopeDie;
@@ -1808,7 +1827,7 @@ function rollDuality(traitMod, label) {
   Object.keys(diceState.experiences).forEach(k=>{diceState.experiences[k]=false;});
   diceState.advDis='normal';
   refreshModButtons();
-  return {type:'duality',label,hope:hopeDie,fear:fearDie,advDie,advDieRoll,traitMod,expBonus,expCount,total,isCrit,withHope,withFear,hopeGained,stressCleared};
+  return {type:'duality',label,hope:hopeDie,fear:fearDie,advDie,advDieRoll,traitMod,expBonus,expCount,bonusTotal,total,isCrit,withHope,withFear,hopeGained,stressCleared};
 }
 
 function renderDiceResult(roll) {
@@ -1819,10 +1838,11 @@ function renderDiceResult(roll) {
     let cls='',verdict='';
     if(roll.isCrit){cls='crit';verdict='✦ Critique — succès auto';el.classList.add('crit');}
     else if(roll.withHope){cls='hope';verdict='✦ Avec Hope';el.classList.add('with-hope');}
-    else if(roll.withFear){cls='fear';verdict='☠ Avec Fear (MJ +1)';el.classList.add('with-fear');}
+    else if(roll.withFear){cls='fear';verdict='☠ Avec Fear';el.classList.add('with-fear');}
     let bd=`Hope <b>${roll.hope}</b> + Fear <b>${roll.fear}</b>`;
     if(roll.traitMod)bd+=` ${roll.traitMod>=0?'+':''}${roll.traitMod} (${roll.label})`;
     if(roll.expBonus)bd+=` +${roll.expBonus} exp`;
+    if(roll.bonusTotal)bd+=` ${roll.bonusTotal>=0?'+':''}${roll.bonusTotal} bonus`;
     if(roll.advDie)bd+=` ${roll.advDie>=0?'+':''}${roll.advDie} (${roll.advDie>=0?'adv':'dis'} d6=${roll.advDieRoll})`;
     const auto=[];
     if(roll.expCount)auto.push(`−${roll.expCount} Hope (exp)`);
@@ -1881,6 +1901,13 @@ function setupDiceRoller() {
   });
   document.querySelectorAll('[data-mod-flag="crit"]').forEach(b=>{
     b.addEventListener('click',()=>{diceState.critDamage=!diceState.critDamage;refreshModButtons();});
+  });
+  document.querySelectorAll('[data-bonus-key]').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const k=b.dataset.bonusKey, v=parseInt(b.dataset.bonusVal)||0;
+      diceState.bonuses[k]=diceState.bonuses[k]?0:v;
+      refreshModButtons();
+    });
   });
   document.querySelectorAll('[data-trait]').forEach(b=>{
     b.addEventListener('click',()=>{
