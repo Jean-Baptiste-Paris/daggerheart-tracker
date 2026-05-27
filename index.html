@@ -392,10 +392,10 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
       </div>
       <div class="form-row cols2">
         <div class="form-field"><label>Niveau</label><input type="number" id="f-level" min="1" max="10" value="1"></div>
-        <div class="form-field"><label>Proficiency <span style="color:var(--muted);font-weight:400">(auto)</span></label><input type="number" id="f-prof" min="1" max="6" value="1"></div>
+        <div class="form-field"><label>Tier <span style="color:var(--muted);font-weight:400">(auto)</span></label><input type="number" id="f-tier" min="1" max="4" value="1" readonly style="opacity:.6;cursor:default"></div>
       </div>
       <div class="form-row cols2">
-        <div class="form-field"><label>Tier</label><input type="number" id="f-tier" min="1" max="4" value="1"></div>
+        <div class="form-field"><label>Proficiency <span id="f-prof-hint" style="color:var(--muted);font-weight:400"></span></label><input type="number" id="f-prof" min="1" max="6" value="1"></div>
         <div class="form-field" style="flex-direction:row;align-items:center;gap:10px;padding-top:18px">
           <input type="color" id="f-color" value="#e8c84a">
           <label style="cursor:pointer">Couleur du perso</label>
@@ -2139,9 +2139,26 @@ function updateThrCalc() {
   else preview.style.display = 'none';
 }
 
+function levelToTier(level) {
+  if (level >= 10) return 4;
+  if (level >= 8) return 3;
+  if (level >= 5) return 2;
+  return 1;
+}
+
+function enforceProfMin() {
+  const tier = parseInt(document.getElementById('f-tier').value) || 1;
+  const profEl = document.getElementById('f-prof');
+  const prof = parseInt(profEl.value) || 1;
+  if (prof < tier) profEl.value = tier;
+  const hint = document.getElementById('f-prof-hint');
+  if (hint) hint.textContent = tier > 1 ? `(min ${tier} au T${tier})` : '';
+}
+
 function updateLevelDerived() {
   const level = parseInt(document.getElementById('f-level').value) || 1;
-  document.getElementById('f-prof').value = Math.min(level, 6);
+  document.getElementById('f-tier').value = levelToTier(level);
+  enforceProfMin();
 }
 
 function updateSubclassOptions() {
@@ -2166,6 +2183,8 @@ function setupFormAutoCalc() {
   });
   const levelInput = document.getElementById('f-level');
   if (levelInput) levelInput.addEventListener('input', updateLevelDerived);
+  const profInput = document.getElementById('f-prof');
+  if (profInput) profInput.addEventListener('change', enforceProfMin);
   const colorInput = document.getElementById('f-color');
   if (colorInput) colorInput.addEventListener('input', applyFormAccent);
   // Delegated handler for all data-combo selects
