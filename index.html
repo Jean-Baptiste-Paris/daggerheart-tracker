@@ -2054,6 +2054,11 @@ let auth = null;
 let currentUser = null;
 let fsSaveTimer = null;
 
+function isMobileBrowser() {
+  return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || window.matchMedia('(display-mode: standalone)').matches;
+}
+
 function initFirebase() {
   firebase.initializeApp(FIREBASE_CONFIG);
   db = firebase.firestore();
@@ -2061,6 +2066,11 @@ function initFirebase() {
   db.enablePersistence({ synchronizeTabs: true }).catch(err => {
     if (err.code !== 'failed-precondition' && err.code !== 'unimplemented')
       console.warn('Firestore persistence:', err.code);
+  });
+  // Récupère le résultat d'un éventuel signInWithRedirect (mobile)
+  auth.getRedirectResult().catch(err => {
+    if (err.code && err.code !== 'auth/no-auth-event')
+      alert('Connexion échouée : ' + err.message);
   });
 }
 
@@ -2081,8 +2091,12 @@ function renderAuthBar() {
 }
 
 function loginWithGoogle() {
-  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
-    .catch(err => alert('Connexion échouée : ' + err.message));
+  const provider = new firebase.auth.GoogleAuthProvider();
+  if (isMobileBrowser()) {
+    auth.signInWithRedirect(provider);
+  } else {
+    auth.signInWithPopup(provider).catch(err => alert('Connexion échouée : ' + err.message));
+  }
 }
 
 function doLogout() {
