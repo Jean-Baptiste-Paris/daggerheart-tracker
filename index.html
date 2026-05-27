@@ -319,9 +319,10 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
   <details class="form-section" open>
     <summary>Informations de base</summary>
     <div class="fsec-body">
-      <div class="form-row cols2">
+      <div class="form-row" style="grid-template-columns:1fr 1fr 1fr">
         <div class="form-field"><label>Nom *</label><input type="text" id="f-name" placeholder="Thelkri"></div>
-        <div class="form-field"><label>Race</label><input type="text" id="f-race" list="list-race" placeholder="Orc" autocomplete="off"></div>
+        <div class="form-field"><label>Ancestralité</label><input type="text" id="f-race" list="list-race" placeholder="Orc" autocomplete="off"></div>
+        <div class="form-field"><label>Ancestralité 2 <span style="color:var(--muted);font-weight:400">(sang-mêlé)</span></label><input type="text" id="f-race2" list="list-race" placeholder="optionnel" autocomplete="off"></div>
       </div>
       <div class="form-row cols2">
         <div class="form-field"><label>Classe</label><input type="text" id="f-class" list="list-class" placeholder="Warrior" autocomplete="off"></div>
@@ -705,7 +706,7 @@ function renderCharList() {
     card.innerHTML = `
       <div class="clvl">Niv. ${def.level}</div>
       <div class="cn">${esc(def.name)}</div>
-      <div class="csub">${esc([def.race,def.class,def.subclass].filter(Boolean).join(' · '))}</div>
+      <div class="csub">${esc([(def.race2?def.race+' / '+def.race2:def.race),def.class,def.subclass].filter(Boolean).join(' · '))}</div>
       <div class="cstats">
         <span class="cstat">HP ${def.maxHp}</span>
         <span class="cstat">Évit. ${def.evasion}</span>
@@ -889,7 +890,9 @@ function clearFormRows() {
 function populateFormFromDef(def) {
   document.getElementById('f-name').value = def.name||'';
   document.getElementById('f-race').value = def.race||'';
+  document.getElementById('f-race2').value = def.race2||'';
   document.getElementById('f-class').value = def.class||'';
+  updateSubclassOptions();
   document.getElementById('f-subclass').value = def.subclass||'';
   document.getElementById('f-community').value = def.community||'';
   document.getElementById('f-bg').value = def.background||'';
@@ -975,6 +978,7 @@ function readFormValues() {
   return {
     name: document.getElementById('f-name').value.trim(),
     race: document.getElementById('f-race').value.trim(),
+    race2: document.getElementById('f-race2').value.trim(),
     class: document.getElementById('f-class').value.trim(),
     subclass: document.getElementById('f-subclass').value.trim(),
     community: document.getElementById('f-community').value.trim(),
@@ -1064,7 +1068,8 @@ function effectiveWeaponFormula(weapon, prof) {
    ============================================================ */
 
 function buildTrackerHTML(def) {
-  const subtitle = [def.race, def.class, def.subclass].filter(Boolean).join(' · ');
+  const raceLabel = def.race2 ? `${def.race} / ${def.race2}` : def.race;
+  const subtitle = [raceLabel, def.class, def.subclass].filter(Boolean).join(' · ');
   const meta = `Proficiency ${def.proficiency} · Tier ${def.tier}`;
   const thrMajor = def.thresholdSevere - 1;
 
