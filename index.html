@@ -202,16 +202,18 @@ details>.body{padding:14px}
 .footer .save-info{color:var(--muted);font-size:11px;margin-left:auto}
 .hint{color:var(--muted);font-size:11px}
 kbd{background:var(--panel-3);border:1px solid var(--border-strong);border-radius:3px;padding:1px 5px;font-size:10px;color:var(--text);font-family:ui-monospace,Menlo,monospace}
-.dice-floating{position:fixed;bottom:16px;right:16px;width:340px;max-height:calc(100vh - 32px);background:var(--panel);border:1px solid var(--border-strong);border-radius:8px;box-shadow:0 12px 36px rgba(0,0,0,.55);z-index:200;display:flex;flex-direction:column;overflow:hidden}
-.dice-fl-header{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--panel-3);border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.dice-fab{position:fixed;bottom:20px;right:20px;width:52px;height:52px;background:var(--accent);color:#1a1a1a;border:none;border-radius:50%;font-size:26px;cursor:pointer;z-index:300;display:none;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.5);transition:transform .15s,box-shadow .15s;line-height:1;padding:0}
+.dice-fab:hover{transform:scale(1.1);box-shadow:0 6px 24px rgba(0,0,0,.65)}
+.dice-fab.visible{display:flex}
+.dice-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:290;display:none}
+.dice-modal-backdrop.open{display:block}
+.dice-modal{position:fixed;bottom:84px;right:16px;width:340px;max-height:calc(100vh - 104px);background:var(--panel);border:1px solid var(--border-strong);border-radius:8px;box-shadow:0 12px 36px rgba(0,0,0,.55);z-index:295;display:none;flex-direction:column;overflow:hidden}
+.dice-modal.open{display:flex}
+.dice-modal-header{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--panel-3);border-bottom:1px solid var(--border)}
 .dice-fl-title{font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px;font-size:12px}
 .dice-fl-toggle{background:transparent;border:1px solid var(--border-strong);color:var(--text);padding:0;width:22px;height:22px;border-radius:3px;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center}
 .dice-fl-toggle:hover{background:var(--panel-2);color:var(--accent)}
 .dice-fl-body{padding:12px;overflow-y:auto;flex:1}
-.dice-floating.collapsed{width:auto}
-.dice-floating.collapsed .dice-fl-body{display:none}
-.dice-floating.collapsed .dice-fl-header{border-bottom:none}
-.dice-floating.collapsed .dice-fl-title::after{content:' (replié)';color:var(--muted);font-weight:400}
 .dice-mods{margin-bottom:10px;padding-bottom:10px;border-bottom:1px dashed var(--border)}
 .dice-mod-row{display:flex;gap:4px;flex-wrap:wrap;align-items:center;margin-bottom:4px}
 .dice-mod-row:last-child{margin-bottom:0}
@@ -277,7 +279,7 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
 @media(max-width:800px){
   .hero{grid-template-columns:1fr 1fr}
   .traits{grid-column:1/-1;grid-template-columns:repeat(3,1fr)}
-  .dice-floating{position:static;width:auto;max-height:none;margin-top:12px;box-shadow:none}
+  .dice-modal{left:0;right:0;bottom:0;width:100%;border-radius:12px 12px 0 0;max-height:75vh}
 }
 @media(max-width:600px){
   .screen{padding:10px}
@@ -1293,10 +1295,12 @@ function buildTrackerHTML(def) {
       </div>
     </div>
 
-    <div class="dice-floating" id="dice-floating">
-      <div class="dice-fl-header">
-        <span class="dice-fl-title">Dés</span>
-        <button class="dice-fl-toggle" id="dice-fl-toggle">−</button>
+    <button class="dice-fab visible" id="dice-fab" title="Lancer les dés">🎲</button>
+    <div class="dice-modal-backdrop" id="dice-modal-backdrop"></div>
+    <div class="dice-modal" id="dice-modal">
+      <div class="dice-modal-header">
+        <span class="dice-fl-title">Dés — Dualité 2d12</span>
+        <button class="dice-fl-toggle" id="dice-fl-toggle">✕</button>
       </div>
       <div class="dice-fl-body">
         <div class="dice-mods">
@@ -1903,20 +1907,17 @@ function setupDiceRoller() {
 }
 
 function setupDiceFloating() {
-  const fl=document.getElementById('dice-floating');
-  const btn=document.getElementById('dice-fl-toggle');
-  const header=fl && fl.querySelector('.dice-fl-header');
-  if (!fl||!btn||!header) return;
-  const KEY='daggerheart-dice-collapsed';
-  if(localStorage.getItem(KEY)==='1'){fl.classList.add('collapsed');btn.textContent='+';}
-  function toggle(){
-    fl.classList.toggle('collapsed');
-    const c=fl.classList.contains('collapsed');
-    btn.textContent=c?'+':'−';
-    localStorage.setItem(KEY,c?'1':'0');
-  }
-  btn.addEventListener('click',e=>{e.stopPropagation();toggle();});
-  header.addEventListener('click',toggle);
+  const fab=document.getElementById('dice-fab');
+  const modal=document.getElementById('dice-modal');
+  const backdrop=document.getElementById('dice-modal-backdrop');
+  const closeBtn=document.getElementById('dice-fl-toggle');
+  if (!fab||!modal||!backdrop) return;
+  function openDice(){modal.classList.add('open');backdrop.classList.add('open');}
+  function closeDice(){modal.classList.remove('open');backdrop.classList.remove('open');}
+  fab.addEventListener('click',openDice);
+  if(closeBtn) closeBtn.addEventListener('click',closeDice);
+  backdrop.addEventListener('click',closeDice);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDice();});
 }
 
 /* ============================================================
