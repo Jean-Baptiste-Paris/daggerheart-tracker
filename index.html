@@ -319,10 +319,12 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
   <details class="form-section" open>
     <summary>Informations de base</summary>
     <div class="fsec-body">
-      <div class="form-row" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="form-row">
         <div class="form-field"><label>Nom *</label><input type="text" id="f-name" placeholder="Thelkri"></div>
+      </div>
+      <div class="form-row cols2">
         <div class="form-field"><label>Ancestralité</label><input type="text" id="f-race" list="list-race" placeholder="Orc" autocomplete="off"></div>
-        <div class="form-field"><label>Ancestralité 2 <span style="color:var(--muted);font-weight:400">(sang-mêlé)</span></label><input type="text" id="f-race2" list="list-race" placeholder="optionnel" autocomplete="off"></div>
+        <div class="form-field"><label>Sang-mêlé <span style="color:var(--muted);font-weight:400">(optionnel)</span></label><input type="text" id="f-race2" list="list-race" placeholder="—" autocomplete="off"></div>
       </div>
       <div class="form-row cols2">
         <div class="form-field"><label>Classe</label><input type="text" id="f-class" list="list-class" placeholder="Warrior" autocomplete="off"></div>
@@ -330,19 +332,18 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
       </div>
       <div class="form-row cols2">
         <div class="form-field"><label>Communauté</label><input type="text" id="f-community" list="list-community" placeholder="Slyborne" autocomplete="off"></div>
-        <div class="form-field"><label>Background (optionnel)</label><input type="text" id="f-bg" placeholder="ex: Ex-mercenaire"></div>
+        <div class="form-field"><label>Background <span style="color:var(--muted);font-weight:400">(optionnel)</span></label><input type="text" id="f-bg" placeholder="ex: Ex-mercenaire"></div>
       </div>
-      <div class="form-row" style="grid-template-columns:auto 1fr;gap:12px;align-items:center">
-        <div class="form-field" style="flex-direction:row;align-items:center;gap:8px">
-          <label>Couleur</label>
-          <input type="color" id="f-color" value="#e8c84a">
-        </div>
-        <div class="form-field"><label style="color:var(--muted)">Couleur d'accentuation du tracker et de la carte</label></div>
-      </div>
-      <div class="form-row cols3">
+      <div class="form-row cols2">
         <div class="form-field"><label>Niveau</label><input type="number" id="f-level" min="1" max="10" value="1"></div>
-        <div class="form-field"><label>Proficiency <span style="color:var(--muted);font-weight:400">(≈ niveau, auto)</span></label><input type="number" id="f-prof" min="1" max="6" value="1"></div>
+        <div class="form-field"><label>Proficiency <span style="color:var(--muted);font-weight:400">(auto)</span></label><input type="number" id="f-prof" min="1" max="6" value="1"></div>
+      </div>
+      <div class="form-row cols2">
         <div class="form-field"><label>Tier</label><input type="number" id="f-tier" min="1" max="4" value="1"></div>
+        <div class="form-field" style="flex-direction:row;align-items:center;gap:10px;padding-top:18px">
+          <input type="color" id="f-color" value="#e8c84a">
+          <label style="cursor:pointer">Couleur du perso</label>
+        </div>
       </div>
     </div>
   </details>
