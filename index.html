@@ -275,6 +275,13 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
 /* ---- AUTH BAR ---- */
 #auth-bar{display:flex;align-items:center;gap:8px;flex-shrink:0}
 #auth-name{font-size:11px;color:var(--muted);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ---- DEBUG PANEL ---- */
+#debug-panel{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;flex-direction:column;padding:12px;gap:8px;font-family:ui-monospace,Menlo,monospace;font-size:11px}
+#debug-panel h2{color:#f8e060;margin:0;font-size:13px;letter-spacing:1px}
+#debug-log{flex:1;overflow-y:auto;color:#b8ffb8;white-space:pre-wrap;word-break:break-all;background:#0a0e14;border:1px solid #2a3a2a;border-radius:4px;padding:8px}
+#debug-bar{display:flex;gap:8px;flex-shrink:0}
+#debug-bar button{font-size:11px;padding:5px 10px}
+.dbg-err{color:#ff8888}.dbg-warn{color:#ffcc66}.dbg-info{color:#88ccff}
 /* Responsive */
 @media(max-width:800px){
   .hero{grid-template-columns:1fr 1fr}
@@ -517,6 +524,16 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
 </div>
 
 <div id="drop-overlay">Lâcher le .json pour importer</div>
+
+<div id="debug-panel" style="display:none">
+  <h2>🪲 Debug log</h2>
+  <div id="debug-log"></div>
+  <div id="debug-bar">
+    <button onclick="debugClear()">Effacer</button>
+    <button onclick="document.getElementById('debug-panel').style.display='none'">Fermer</button>
+    <button onclick="navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('debug-log').textContent)">Copier</button>
+  </div>
+</div>
 
 
 <script>
@@ -2054,21 +2071,82 @@ let auth = null;
 let currentUser = null;
 let fsSaveTimer = null;
 
+/* ============================================================
+   DEBUG LOGGER (localStorage-persisted, survit aux redirects)
+   ============================================================ */
+
+const DBG_KEY = 'dh-debug-log';
+const DBG_MAX = 80;
+
+function debugLog(msg, level='info') {
+  const ts = new Date().toISOString().slice(11,23);
+  const entry = `[${ts}] ${msg}`;
+  try {
+    const arr = JSON.parse(localStorage.getItem(DBG_KEY)||'[]');
+    arr.push({t:ts,m:msg,l:level});
+    if (arr.length > DBG_MAX) arr.splice(0, arr.length - DBG_MAX);
+    localStorage.setItem(DBG_KEY, JSON.stringify(arr));
+  } catch(e) {}
+  if (document.getElementById('debug-log')) renderDebugLog();
+}
+
+function debugClear() {
+  localStorage.removeItem(DBG_KEY);
+  if (document.getElementById('debug-log')) renderDebugLog();
+}
+
+function renderDebugLog() {
+  const el = document.getElementById('debug-log');
+  if (!el) return;
+  try {
+    const arr = JSON.parse(localStorage.getItem(DBG_KEY)||'[]');
+    el.innerHTML = arr.map(e=>{
+      const cls = e.l==='err'?'dbg-err':e.l==='warn'?'dbg-warn':'dbg-info';
+      return `<span class="${cls}">[${e.t}] ${esc(e.m)}</span>`;
+    }).join('\n') || '<em style="color:#555">Aucun log.</em>';
+    el.scrollTop = el.scrollHeight;
+  } catch(e) { el.textContent = 'Erreur lecture logs.'; }
+}
+
+function showDebugPanel() {
+  document.getElementById('debug-panel').style.display = 'flex';
+  renderDebugLog();
+}
+
+// Ouvre le panel : triple-tap sur le titre de l'app OU ?debug dans l'URL
+(function setupDebugTrigger() {
+  if (location.search.includes('debug')) {
+    document.addEventListener('DOMContentLoaded', showDebugPanel);
+  }
+  let taps = 0, tapTimer;
+  document.addEventListener('click', e => {
+    if (!e.target.closest('h1')) return;
+    taps++;
+    clearTimeout(tapTimer);
+    tapTimer = setTimeout(() => { taps = 0; }, 600);
+    if (taps >= 3) { taps = 0; showDebugPanel(); }
+  });
+})();
+
 function isMobileBrowser() {
   return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
     || window.matchMedia('(display-mode: standalone)').matches;
 }
 
 function initFirebase() {
+  debugLog('initFirebase start — UA: ' + navigator.userAgent.slice(0,80));
   firebase.initializeApp(FIREBASE_CONFIG);
   db = firebase.firestore();
   auth = firebase.auth();
+  debugLog('Firebase app + auth + db OK');
   db.enablePersistence({ synchronizeTabs: true }).catch(err => {
-    if (err.code !== 'failed-precondition' && err.code !== 'unimplemented')
-      console.warn('Firestore persistence:', err.code);
+    debugLog('Firestore persistence err: ' + err.code, 'warn');
   });
   // Récupère le résultat d'un éventuel signInWithRedirect (mobile)
-  auth.getRedirectResult().catch(err => {
+  auth.getRedirectResult().then(result => {
+    debugLog('getRedirectResult: user=' + (result.user ? result.user.email : 'null'));
+  }).catch(err => {
+    debugLog('getRedirectResult err: ' + err.code + ' ' + err.message, 'err');
     if (err.code && err.code !== 'auth/no-auth-event')
       alert('Connexion échouée : ' + err.message);
   });
@@ -2091,11 +2169,19 @@ function renderAuthBar() {
 }
 
 function loginWithGoogle() {
+  const mobile = isMobileBrowser();
+  debugLog('loginWithGoogle — isMobile=' + mobile);
   const provider = new firebase.auth.GoogleAuthProvider();
-  if (isMobileBrowser()) {
-    auth.signInWithRedirect(provider);
+  if (mobile) {
+    debugLog('→ signInWithRedirect');
+    auth.signInWithRedirect(provider).catch(err => {
+      debugLog('signInWithRedirect err: ' + err.code + ' ' + err.message, 'err');
+    });
   } else {
-    auth.signInWithPopup(provider).catch(err => alert('Connexion échouée : ' + err.message));
+    auth.signInWithPopup(provider).catch(err => {
+      debugLog('signInWithPopup err: ' + err.code + ' ' + err.message, 'err');
+      alert('Connexion échouée : ' + err.message);
+    });
   }
 }
 
@@ -2265,11 +2351,13 @@ function init() {
   showScreen('list');
 
   auth.onAuthStateChanged(async user => {
+    debugLog('onAuthStateChanged: ' + (user ? user.email + ' uid=' + user.uid.slice(0,8) : 'null'));
     currentUser = user;
     renderAuthBar();
 
     if (user) {
       const fsChars = await fsLoadChars();
+      debugLog('fsLoadChars: ' + (fsChars ? fsChars.length + ' persos' : 'null'));
       if (fsChars && fsChars.length > 0) {
         chars = fsChars;
         localStorage.setItem(STORAGE_CHARS, JSON.stringify(chars));
