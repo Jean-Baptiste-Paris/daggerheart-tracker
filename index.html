@@ -301,6 +301,34 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
   .traits-form-grid{grid-template-columns:repeat(2,1fr)}
   .form-row.cols3,.form-row.cols4{grid-template-columns:1fr 1fr}
 }
+/* ---- LEVEL UP MODAL ---- */
+#levelup-modal{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px}
+.lvlup-inner{background:var(--panel);border:1px solid var(--border-strong);border-radius:8px;width:100%;max-width:480px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+.lvlup-header{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px;background:var(--panel-3);border-bottom:1px solid var(--border);flex-shrink:0}
+.lvlup-title{font-size:13px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px}
+.lvlup-subtitle{font-size:12px;color:var(--muted);margin-top:3px}
+.lvlup-close{background:transparent;border:1px solid var(--border-strong);color:var(--muted);padding:0;width:22px;height:22px;border-radius:3px;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lvlup-close:hover{color:var(--text)}
+.lvlup-body{padding:14px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px}
+.lvlup-section-title{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.lvlup-slots{color:var(--accent)}
+.lvlup-achievement{font-size:12px;color:var(--good);padding:4px 0;border-bottom:1px dashed var(--border)}
+.lvlup-achievement:last-child{border-bottom:none}
+.lvlup-adv{background:var(--panel-2);border:1px solid var(--border);border-radius:4px;padding:10px 12px;cursor:pointer;transition:border-color .12s,background .12s;margin-bottom:4px}
+.lvlup-adv:last-child{margin-bottom:0}
+.lvlup-adv:hover:not(.disabled){border-color:var(--accent-dark)}
+.lvlup-adv.selected{border-color:var(--accent);background:rgba(232,200,74,.08)}
+.lvlup-adv.disabled{opacity:.4;cursor:default}
+.lvlup-adv-label{font-size:13px;font-weight:700;color:var(--text)}
+.lvlup-adv.selected .lvlup-adv-label{color:var(--accent)}
+.lvlup-adv-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.lvlup-cost-badge{background:var(--fear-soft);color:#b8a2ee;border-radius:3px;padding:0 5px;font-size:10px;font-weight:700;margin-left:4px}
+.lvlup-sub{display:none;background:var(--panel-3);border:1px dashed var(--border-strong);border-radius:0 0 4px 4px;padding:10px;margin:-4px 0 4px;border-top:none}
+.lvlup-sub-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700;margin-bottom:6px}
+.lvlup-pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:4px}
+.lvlup-pick-btn{font-size:11px;padding:6px 8px;text-align:center}
+.lvlup-pick-btn.selected{background:var(--accent);color:#1a1a1a;border-color:var(--accent);font-weight:700}
+.lvlup-footer{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;background:var(--panel-3);border-top:1px solid var(--border);flex-shrink:0}
 </style>
 </head>
 <body>
@@ -1249,9 +1277,12 @@ function buildTrackerHTML(def) {
         <div class="sub">${esc(subtitle)}</div>
         <div class="meta">${esc(meta)}</div>
       </div>
-      <div class="level-badge">
-        <div class="lbl">Niveau</div>
-        <div class="val">${def.level}</div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+        <div class="level-badge">
+          <div class="lbl">Niveau</div>
+          <div class="val">${def.level}</div>
+        </div>
+        ${def.level < 10 ? `<button class="tiny" id="btn-levelup" style="white-space:nowrap">Niv. +1 ↑</button>` : `<span class="hint" style="font-size:10px">Niv. max</span>`}
       </div>
     </div>
 
@@ -1732,9 +1763,281 @@ function initTrackerEvents() {
   // Keyboard shortcut
   window.addEventListener('keydown',kbHandler);
 
+  // Level up
+  const btnLevelup = document.getElementById('btn-levelup');
+  if (btnLevelup) btnLevelup.addEventListener('click', openLevelUp);
+
   // Dice roller
   setupDiceRoller();
   setupDiceFloating();
+}
+
+/* ============================================================
+   LEVEL UP
+   ============================================================ */
+
+function tierForLevel(lvl) {
+  if (lvl <= 1) return 1;
+  if (lvl <= 4) return 2;
+  if (lvl <= 7) return 3;
+  return 4;
+}
+
+const ADVANCEMENTS = [
+  { id:'hp',       label:'+1 PV max',             cost:1, sub:'Permanent' },
+  { id:'stress',   label:'+1 Stress max',          cost:1, sub:'Permanent' },
+  { id:'evasion',  label:'Évasion +1',             cost:1, sub:'Permanent' },
+  { id:'traits',   label:'Traits +1',              cost:1, sub:'Choisir 2 traits non marqués, +1 et marquer' },
+  { id:'exp',      label:'Expériences +2',         cost:1, sub:'Choisir 2 expériences existantes, +1 chacune' },
+  { id:'domain',   label:'Carte de domaine',       cost:1, sub:'À ajouter manuellement dans la fiche' },
+  { id:'subclass', label:'Carte de sous-classe',   cost:1, sub:'À ajouter manuellement dans la fiche' },
+  { id:'prof',     label:'Proficiency +1',         cost:2, sub:'Coûte 2 slots — augmente les dés d\'arme' },
+  { id:'multi',    label:'Multiclasse',            cost:2, sub:'Coûte 2 slots — à configurer manuellement' },
+];
+
+let lvlUpState = { selected:[], traitPicks:[], expPicks:[] };
+
+function openLevelUp() {
+  if (!charDef) return;
+  const newLevel = charDef.level + 1;
+  if (newLevel > 10) { flash('Niveau maximum (10) atteint.'); return; }
+  const newTier = tierForLevel(newLevel);
+  const tierChanged = newTier > charDef.tier;
+  lvlUpState = { selected:[], traitPicks:[], expPicks:[] };
+
+  const achievements = [];
+  if ([2,5,8].includes(newLevel)) {
+    achievements.push('Proficiency +1');
+    achievements.push('Nouvelle Expérience à +2 (ajouter dans la fiche)');
+    if (newLevel === 5 || newLevel === 8) achievements.push('Traits marqués effacés');
+  }
+
+  const unmarkedTraits = (charDef.traits||[]).filter(t=>!t.marked);
+  const traitPicksHTML = unmarkedTraits.length >= 2
+    ? `<div class="lvlup-sub-label">Choisir 2 traits non marqués :</div>
+       <div class="lvlup-pick-grid">
+         ${unmarkedTraits.map(t=>`<button class="lvlup-pick-btn" data-trait-key="${esc(t.key)}">${esc(t.name)} ${t.val>=0?'+':''}${t.val} → ${t.val>=0?'+':''}${t.val+1}</button>`).join('')}
+       </div>`
+    : `<p class="hint">Tous les traits sont déjà marqués.</p>`;
+
+  const EXP_MAX = 4;
+  const exps = charDef.experiences || [];
+  const pickableExps = exps.filter(e=>e.val < EXP_MAX);
+  const expPicksHTML = exps.length
+    ? `<div class="lvlup-sub-label">Choisir 2 expériences (+1 chacune, max ${EXP_MAX}) :</div>
+       <div class="lvlup-pick-grid">
+         ${exps.map(e=>e.val >= EXP_MAX
+           ? `<button class="lvlup-pick-btn" disabled style="opacity:.4;cursor:default">${esc(e.name)} max</button>`
+           : `<button class="lvlup-pick-btn" data-exp-key="${esc(e.key)}">${esc(e.name)} +${e.val} → +${e.val+1}</button>`
+         ).join('')}
+       </div>`
+    : `<p class="hint">Aucune expérience définie.</p>`;
+
+  const advHTML = ADVANCEMENTS.map(adv=>`
+    <div class="lvlup-adv" data-adv-id="${adv.id}" data-adv-cost="${adv.cost}">
+      <div class="lvlup-adv-label">${esc(adv.label)}${adv.cost===2?`<span class="lvlup-cost-badge">2 slots</span>`:''}</div>
+      <div class="lvlup-adv-sub">${esc(adv.sub)}</div>
+      ${adv.id==='traits'?`<div class="lvlup-sub" id="lvlup-traits-sub">${traitPicksHTML}</div>`:''}
+      ${adv.id==='exp'?`<div class="lvlup-sub" id="lvlup-exp-sub">${expPicksHTML}</div>`:''}
+    </div>`).join('');
+
+  const achievementsSection = achievements.length ? `
+    <div>
+      <div class="lvlup-section-title">Acquis automatiquement</div>
+      ${achievements.map(a=>`<div class="lvlup-achievement">✦ ${esc(a)}</div>`).join('')}
+    </div>` : '';
+
+  const modal = document.createElement('div');
+  modal.id = 'levelup-modal';
+  modal.innerHTML = `
+    <div class="lvlup-inner">
+      <div class="lvlup-header">
+        <div>
+          <div class="lvlup-title">Montée de niveau</div>
+          <div class="lvlup-subtitle">Niv. ${charDef.level} → ${newLevel}${tierChanged?` · <span style="color:var(--good)">Tier ${newTier} !</span>`:` · Tier ${newTier}`}</div>
+        </div>
+        <button class="lvlup-close" id="lvlup-close">✕</button>
+      </div>
+      <div class="lvlup-body">
+        ${achievementsSection}
+        <div>
+          <div class="lvlup-section-title">Améliorations — choisir 2 slots <span id="lvlup-slots-left" class="lvlup-slots">(0/2 utilisés)</span></div>
+          ${advHTML}
+        </div>
+        <div>
+          <div class="lvlup-section-title">Automatique</div>
+          <div class="lvlup-achievement">✦ Seuils de dégâts +1</div>
+        </div>
+      </div>
+      <div class="lvlup-footer">
+        <button id="lvlup-cancel">Annuler</button>
+        <button class="primary" id="lvlup-apply">Appliquer Niv. ${newLevel}</button>
+      </div>
+    </div>`;
+
+  document.getElementById('tracker-content').appendChild(modal);
+  document.body.style.overflow = 'hidden';
+
+  document.getElementById('lvlup-close').addEventListener('click', closeLevelUp);
+  document.getElementById('lvlup-cancel').addEventListener('click', closeLevelUp);
+  document.getElementById('lvlup-apply').addEventListener('click', applyLevelUp);
+  modal.addEventListener('click', e=>{ if(e.target===modal) closeLevelUp(); });
+
+  document.querySelectorAll('.lvlup-adv').forEach(el=>{
+    el.addEventListener('click', e=>{
+      if (e.target.closest('.lvlup-sub')) return;
+      const id = el.dataset.advId;
+      const cost = parseInt(el.dataset.advCost)||1;
+      const usedSlots = slotsUsed();
+      const idx = lvlUpState.selected.indexOf(id);
+      if (idx >= 0) {
+        lvlUpState.selected.splice(idx,1);
+        if (id==='traits') lvlUpState.traitPicks=[];
+        if (id==='exp') lvlUpState.expPicks=[];
+      } else if (usedSlots + cost <= 2) {
+        lvlUpState.selected.push(id);
+      }
+      refreshLvlUpUI();
+    });
+  });
+
+  document.querySelectorAll('.lvlup-pick-btn[data-trait-key]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const k = btn.dataset.traitKey;
+      const idx = lvlUpState.traitPicks.indexOf(k);
+      if (idx >= 0) lvlUpState.traitPicks.splice(idx,1);
+      else if (lvlUpState.traitPicks.length < 2) lvlUpState.traitPicks.push(k);
+      refreshLvlUpUI();
+    });
+  });
+
+  document.querySelectorAll('.lvlup-pick-btn[data-exp-key]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const k = btn.dataset.expKey;
+      const idx = lvlUpState.expPicks.indexOf(k);
+      if (idx >= 0) lvlUpState.expPicks.splice(idx,1);
+      else if (lvlUpState.expPicks.length < 2) lvlUpState.expPicks.push(k);
+      refreshLvlUpUI();
+    });
+  });
+
+  refreshLvlUpUI();
+}
+
+function slotsUsed() {
+  return lvlUpState.selected.reduce((s,id)=>s+(ADVANCEMENTS.find(x=>x.id===id)?.cost||1),0);
+}
+
+function refreshLvlUpUI() {
+  const used = slotsUsed();
+  const remaining = 2 - used;
+
+  const slotsEl = document.getElementById('lvlup-slots-left');
+  if (slotsEl) slotsEl.textContent = `(${used}/2 utilisés)`;
+
+  document.querySelectorAll('.lvlup-adv').forEach(el=>{
+    const id = el.dataset.advId;
+    const cost = parseInt(el.dataset.advCost)||1;
+    const isSelected = lvlUpState.selected.includes(id);
+    el.classList.toggle('selected', isSelected);
+    el.classList.toggle('disabled', !isSelected && remaining < cost);
+  });
+
+  const traitsSub = document.getElementById('lvlup-traits-sub');
+  const expSub = document.getElementById('lvlup-exp-sub');
+  if (traitsSub) traitsSub.style.display = lvlUpState.selected.includes('traits') ? 'block' : 'none';
+  if (expSub) expSub.style.display = lvlUpState.selected.includes('exp') ? 'block' : 'none';
+
+  document.querySelectorAll('.lvlup-pick-btn[data-trait-key]').forEach(btn=>{
+    btn.classList.toggle('selected', lvlUpState.traitPicks.includes(btn.dataset.traitKey));
+  });
+  document.querySelectorAll('.lvlup-pick-btn[data-exp-key]').forEach(btn=>{
+    btn.classList.toggle('selected', lvlUpState.expPicks.includes(btn.dataset.expKey));
+  });
+
+  const applyBtn = document.getElementById('lvlup-apply');
+  if (applyBtn) {
+    const valid = validateLvlUp();
+    applyBtn.disabled = !valid;
+    applyBtn.style.opacity = valid ? '1' : '.5';
+  }
+}
+
+function validateLvlUp() {
+  if (lvlUpState.selected.includes('traits')) {
+    const unmarked = (charDef.traits||[]).filter(t=>!t.marked);
+    if (unmarked.length >= 2 && lvlUpState.traitPicks.length < 2) return false;
+  }
+  if (lvlUpState.selected.includes('exp')) {
+    const pickable = (charDef.experiences||[]).filter(e=>e.val < 4);
+    const needed = Math.min(2, pickable.length);
+    if (lvlUpState.expPicks.length < needed) return false;
+  }
+  return true;
+}
+
+function closeLevelUp() {
+  const modal = document.getElementById('levelup-modal');
+  if (modal) modal.remove();
+  document.body.style.overflow = '';
+}
+
+function applyLevelUp() {
+  if (!charDef || !validateLvlUp()) return;
+  const newLevel = charDef.level + 1;
+  if (newLevel > 10) return;
+
+  const def = JSON.parse(JSON.stringify(charDef));
+  def.level = newLevel;
+  def.tier = tierForLevel(newLevel);
+
+  def.thresholdMinor = (def.thresholdMinor||0) + 1;
+  def.thresholdSevere = (def.thresholdSevere||0) + 1;
+
+  if ([2,5,8].includes(newLevel)) {
+    def.proficiency = (def.proficiency||1) + 1;
+    if (newLevel === 5 || newLevel === 8) {
+      (def.traits||[]).forEach(t=>{ t.marked=false; });
+    }
+  }
+
+  lvlUpState.selected.forEach(id=>{
+    switch(id) {
+      case 'hp':      def.maxHp=(def.maxHp||0)+1; break;
+      case 'stress':  def.maxStress=(def.maxStress||0)+1; break;
+      case 'evasion': def.evasion=(def.evasion||10)+1; break;
+      case 'prof':    def.proficiency=(def.proficiency||1)+1; break;
+      case 'traits':
+        lvlUpState.traitPicks.forEach(k=>{
+          const t=(def.traits||[]).find(t=>t.key===k);
+          if(t){t.val+=1;t.marked=true;}
+        });
+        break;
+      case 'exp':
+        lvlUpState.expPicks.forEach(k=>{
+          const e=(def.experiences||[]).find(e=>e.key===k);
+          if(e) e.val+=1;
+        });
+        break;
+    }
+  });
+
+  const idx = chars.findIndex(c=>c.id===def.id);
+  if (idx >= 0) chars[idx] = def;
+  charDef = def;
+  saveChars();
+  buildMAX();
+  closeLevelUp();
+
+  document.getElementById('tracker-content').innerHTML = buildTrackerHTML(def);
+  const trackerEl = document.getElementById('screen-tracker');
+  trackerEl.style.setProperty('--accent', def.color||'#e8c84a');
+  trackerEl.style.setProperty('--accent-dark', (def.color||'#e8c84a')+'99');
+  renderTracker();
+  initTrackerEvents();
+
+  const tierMsg = def.tier !== tierForLevel(def.level-1) ? ` — Tier ${def.tier} !` : '';
+  flash(`Niveau ${newLevel}${tierMsg}`);
 }
 
 function addInvItem() {
