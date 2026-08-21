@@ -14,7 +14,7 @@ Open `index.html` directly in a browser. No server needed. Add `?debug` to the U
 
 **Single global script block** organized into functional sections:
 
-- **Constants & defaults** (top of script): trait keys, class→subclass map, `CLASS_DEFAULTS` (HP/evasion/domains per class), `WEAPON_PRESETS`, `ARMOR_PRESETS`, `FEATURE_PRESETS`, `ANCESTRY_FEATURES`, `COMMUNITY_FEATURES`, hardcoded `THELKRI_DEF` default character
+- **Constants & defaults** (top of script): trait keys, class→subclass map, `CLASS_DEFAULTS` (HP/evasion/domains per class), `WEAPON_PRESETS`, `ARMOR_PRESETS`, `FEATURE_PRESETS`, `ANCESTRY_FEATURES`, `COMMUNITY_FEATURES`, `DOMAIN_PRESETS` (163 cards across 10 domains), hardcoded `THELKRI_DEF` default character
 - **State**: three globals — `chars[]` (all character definitions), `charDef` (current char being tracked), `state` (live session state)
 - **Persistence layers** (priority order): in-memory → localStorage → Firestore. Saves are debounced 1.5s before hitting Firestore
 - **Three screens**: `#screen-list` (character grid), `#screen-form` (create/edit), `#screen-tracker` (live play). Switch via `showScreen(name)`
@@ -27,7 +27,7 @@ Open `index.html` directly in a browser. No server needed. Add `?debug` to the U
 
 - **Combo selects**: many dropdowns pair a `<select>` with a hidden `<input>` for custom text — use `readCombo()`/`setCombo()` helpers, not raw `.value`
 - **Dynamic form rows**: weapons, experiences, features, domain cards, toggles, and charges are built by `add*Row()` functions and read back by iterating `querySelectorAll`. Each row has ▲/▼ move buttons + ✕ delete, wired by `wireRowButtons(div)`
-- **Preset system**: weapon/armor/feature preset dropdowns let users add pre-filled (but editable) rows. Feature presets update dynamically based on selected class/ancestry/community. `applyClassDefaults()` pre-fills HP, evasion, stress, hope on class change (new chars only)
+- **Preset system**: weapon/armor/feature/domain preset dropdowns let users add pre-filled (but editable) rows. Feature and domain presets update dynamically based on selected class (domain presets show class domains first, all domains when no class selected). `applyClassDefaults()` pre-fills HP, evasion, stress, hope on class change (new chars only)
 - **Threshold auto-calc**: armor thresholds store `thresholdMinorBase`/`thresholdSevereBase`; final = base + level (readonly display). `updateThrCalc()` recalculates on change. Backward compat: if no base stored, reverse-calc from final
 - **`mergeState(saved, def)`**: called when opening a tracker — clamps HP/Stress/Hope within current maxima, preserves layout preferences, fills in missing keys from defaults
 - **`applyProficiency(formula, prof)`**: auto-scales dice in damage formulas (e.g. `d10+6` with prof 2 → `2d10+6`) unless the weapon is marked `effective: true`
