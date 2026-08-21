@@ -367,12 +367,14 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
           <label>Ancestralité</label>
           <select id="f-race-sel" data-combo="f-race">
             <option value="">— choisir —</option>
-            <option>Clank</option><option>Drakona</option><option>Nain</option>
-            <option>Elfe</option><option>Faun</option><option>Firbolg</option>
-            <option>Fungril</option><option>Galapa</option><option>Géant</option>
+            <option>Aetheris</option><option>Clank</option><option>Drakona</option>
+            <option>Earthkin</option><option>Elfe</option><option>Emberkin</option>
+            <option>Faun</option><option>Firbolg</option><option>Fungril</option>
+            <option>Galapa</option><option>Géant</option><option>Gnome</option>
             <option>Gobelin</option><option>Halfling</option><option>Humain</option>
-            <option>Infernis</option><option>Katari</option><option>Orc</option>
-            <option>Ribbet</option><option>Simiah</option><option>Sylvain</option>
+            <option>Infernis</option><option>Katari</option><option>Nain</option>
+            <option>Orc</option><option>Ribbet</option><option>Simiah</option>
+            <option>Skykin</option><option>Sylvain</option><option>Tidekin</option>
             <option value="__autre__">Autre…</option>
           </select>
           <input type="text" id="f-race" class="combo-text" placeholder="Ancestralité personnalisée">
@@ -381,12 +383,14 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
           <label>Sang-mêlé <span style="color:var(--muted);font-weight:400">(optionnel)</span></label>
           <select id="f-race2-sel" data-combo="f-race2">
             <option value="">— aucun —</option>
-            <option>Clank</option><option>Drakona</option><option>Nain</option>
-            <option>Elfe</option><option>Faun</option><option>Firbolg</option>
-            <option>Fungril</option><option>Galapa</option><option>Géant</option>
+            <option>Aetheris</option><option>Clank</option><option>Drakona</option>
+            <option>Earthkin</option><option>Elfe</option><option>Emberkin</option>
+            <option>Faun</option><option>Firbolg</option><option>Fungril</option>
+            <option>Galapa</option><option>Géant</option><option>Gnome</option>
             <option>Gobelin</option><option>Halfling</option><option>Humain</option>
-            <option>Infernis</option><option>Katari</option><option>Orc</option>
-            <option>Ribbet</option><option>Simiah</option><option>Sylvain</option>
+            <option>Infernis</option><option>Katari</option><option>Nain</option>
+            <option>Orc</option><option>Ribbet</option><option>Simiah</option>
+            <option>Skykin</option><option>Sylvain</option><option>Tidekin</option>
             <option value="__autre__">Autre…</option>
           </select>
           <input type="text" id="f-race2" class="combo-text" placeholder="Ancestralité personnalisée">
@@ -397,9 +401,11 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
           <label>Classe</label>
           <select id="f-class-sel" data-combo="f-class">
             <option value="">— choisir —</option>
-            <option>Bard</option><option>Druid</option><option>Guardian</option>
-            <option>Ranger</option><option>Rogue</option><option>Seraph</option>
-            <option>Sorcerer</option><option>Warrior</option><option>Wizard</option>
+            <option>Assassin</option><option>Bard</option><option>Brawler</option>
+            <option>Druid</option><option>Guardian</option><option>Ranger</option>
+            <option>Rogue</option><option>Seraph</option><option>Sorcerer</option>
+            <option>Warlock</option><option>Warrior</option><option>Witch</option>
+            <option>Wizard</option>
             <option value="__autre__">Autre…</option>
           </select>
           <input type="text" id="f-class" class="combo-text" placeholder="Classe personnalisée">
@@ -418,8 +424,10 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
           <label>Communauté</label>
           <select id="f-community-sel" data-combo="f-community">
             <option value="">— choisir —</option>
-            <option>Loreborne</option><option>Orderborne</option><option>Ridgeborne</option>
-            <option>Seaborne</option><option>Slyborne</option><option>Wanderborne</option>
+            <option>Duneborne</option><option>Freeborne</option><option>Frostborne</option>
+            <option>Hearthborne</option><option>Loreborne</option><option>Orderborne</option>
+            <option>Reborne</option><option>Ridgeborne</option><option>Seaborne</option>
+            <option>Slyborne</option><option>Wanderborne</option><option>Warborne</option>
             <option>Wildborne</option>
             <option value="__autre__">Autre…</option>
           </select>
@@ -585,15 +593,19 @@ const TRAIT_VERBS  = [
 const DMG_LABELS = { phy: 'phys.', mag: 'mag.' };
 
 const CLASS_SUBCLASSES = {
-  'Bard':     ['Wordsmith', 'Troubadour'],
-  'Druid':    ['Warden of the Elements', 'Warden of Renewal'],
-  'Guardian': ['Stalwart', 'Vengeance'],
-  'Ranger':   ['Beastbound', 'Wayfinder'],
-  'Rogue':    ['Syndicate', 'Nightwalker'],
-  'Seraph':   ['Winged Sentinel', 'Winged Zealot'],
-  'Sorcerer': ['Primal Origin', 'Leyline Walker'],
-  'Warrior':  ['Call of the Brave', 'Call of the Slaughter'],
-  'Wizard':   ['School of Knowledge', 'School of War']
+  'Assassin':  ['Executioners Guild', 'Poisoners Guild'],
+  'Bard':      ['Wordsmith', 'Troubadour'],
+  'Brawler':   ['Juggernaut', 'Martial Artist'],
+  'Druid':     ['Warden of the Elements', 'Warden of Renewal'],
+  'Guardian':  ['Stalwart', 'Vengeance'],
+  'Ranger':    ['Beastbound', 'Wayfinder'],
+  'Rogue':     ['Syndicate', 'Nightwalker'],
+  'Seraph':    ['Winged Sentinel', 'Winged Zealot'],
+  'Sorcerer':  ['Primal Origin', 'Leyline Walker'],
+  'Warlock':   ['Pact of the Endless', 'Pact of the Wrathful'],
+  'Warrior':   ['Call of the Brave', 'Call of the Slaughter'],
+  'Witch':     ['Hedge', 'Moon'],
+  'Wizard':    ['School of Knowledge', 'School of War']
 };
 
 const STORAGE_CHARS = 'daggerheart-chars-v1';
@@ -687,7 +699,7 @@ function makeFreshState(def) {
 }
 
 const THELKRI_INITIAL = {
-  hp: 4, stress: 0, hope: 4, armor: 4, gold: 9,
+  hp: 6, stress: 0, hope: 5, armor: 4, gold: 10,
   toggles: {noMercy:false,battleRitual:false,reckless:false,getBackUp:false},
   charges: {airblade:3,boussole:1},
   inventory: [
@@ -698,16 +710,18 @@ const THELKRI_INITIAL = {
     {name:'Minor Health Potion (clear 1d4 PV)',used:false},
     {name:'Balise de résonance (cristal et cuivre)',used:false},
     {name:'Rations ~10 jours + gourde',used:false},
+    {name:'2 outres d\'eau pleines (don de Harun)',used:false},
     {name:'Carnet de Falker',used:false},
     {name:'Fragment oxydé de Falker (illisible)',used:false},
     {name:'Jeton de cuivre du Compas',used:true},
-    {name:'Carte du Ciel (légendaire, ACTIVE)',used:false},
+    {name:'Carte du Ciel (légendaire, DORMANTE — garder éteinte)',used:false},
     {name:'Lampe à huile cuivre + fiole pleine (3-4h)',used:false},
     {name:'Fiole d\'huile de rechange',used:false},
     {name:'8 pitons en fer forgé',used:false},
     {name:'Coins de bois durci',used:false},
     {name:'Marteau à manche court (tête feutrée)',used:false},
-    {name:'Sangles cuir + miroir poli + craie noire',used:false},
+    {name:'Sangles cuir + craie noire',used:false},
+    {name:'Miroir de signalisation neuf (cuivre poli + étui)',used:false},
     {name:'Trousse de soin (bandages, fil, vinaigre)',used:false},
     {name:'Briquet à amadou de rechange',used:false}
   ],
@@ -2066,8 +2080,26 @@ function doImportFromFile(f) {
   reader.onload=()=>{
     try {
       const data=JSON.parse(reader.result);
-      if (data.state) { state=mergeState(data.state,charDef); renderTracker(); saveStateNow(); flash('Import OK : '+f.name); }
-      else { state=mergeState(data,charDef); renderTracker(); saveStateNow(); flash('Import OK (legacy) : '+f.name); }
+      if (!data.def && !data.state) { alert('Fichier JSON invalide : ni "def" ni "state".'); return; }
+      if (data.def) {
+        // Applique la fiche (def) : armes, features, domaines, charges, toggles…
+        // L'id du perso ouvert est conservé (l'import sert le perso actuel).
+        charDef = Object.assign({}, charDef, data.def, {id: charDef.id});
+        buildMAX();
+      }
+      // state importé s'il existe, sinon on garde l'état courant (re-calibré sur le nouveau def)
+      state = mergeState(data.state || state, charDef);
+      const idx = chars.findIndex(c=>c.id===charDef.id);
+      if (idx>=0) chars[idx] = charDef; else chars.push(charDef);
+      saveChars();
+      document.getElementById('tracker-content').innerHTML = buildTrackerHTML(charDef);
+      const trackerEl = document.getElementById('screen-tracker');
+      trackerEl.style.setProperty('--accent', charDef.color || '#e8c84a');
+      trackerEl.style.setProperty('--accent-dark', (charDef.color || '#e8c84a') + '99');
+      renderTracker();
+      initTrackerEvents();
+      saveStateNow();
+      flash('Import OK : '+f.name);
     } catch(err) { alert('Fichier JSON invalide : '+err.message); }
   };
   reader.readAsText(f);
