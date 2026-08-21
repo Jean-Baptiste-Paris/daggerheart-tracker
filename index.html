@@ -796,8 +796,8 @@ const ANCESTRY_FEATURES = {
     {type:'action',name:'Retract',cost:'1 Stress',source:'Galapa',desc:'Résistance phys mais désavantage + immobile.'},
   ],
   'Gnome':[
-    {type:'passive',name:'Gnome Feature 1',cost:'',source:'Gnome',desc:'(Voir fiche de personnage)'},
-    {type:'passive',name:'Gnome Feature 2',cost:'',source:'Gnome',desc:'(Voir fiche de personnage)'},
+    {type:'passive',name:'Nimble Fingers',cost:'2 Hope',source:'Gnome',desc:'Sur un Finesse Roll, relancer le Hope Die.'},
+    {type:'action',name:'Flicker Step',cost:'1/scene',source:'Gnome',desc:'Teleportation vers un point visible dans Far range.'},
   ],
   'Gobelin':[
     {type:'passive',name:'Surefooted',cost:'',source:'Gobelin',desc:'Ignore désavantage sur Agility Rolls.'},
@@ -844,24 +844,24 @@ const ANCESTRY_FEATURES = {
     {type:'action',name:'Eye of the Storm',cost:'2 Hope',source:'Skykin',desc:'+1 Evasion pour soi/allié Melee jusqu\'à Severe damage.'},
   ],
   'Tidekin':[
-    {type:'passive',name:'Tidekin Feature 1',cost:'',source:'Tidekin',desc:'(Voir fiche de personnage)'},
-    {type:'passive',name:'Tidekin Feature 2',cost:'',source:'Tidekin',desc:'(Voir fiche de personnage)'},
+    {type:'passive',name:'Amphibious',cost:'',source:'Tidekin',desc:'Respirer et se deplacer naturellement sous l\'eau.'},
+    {type:'action',name:'Lifespring',cost:'1 Stress, 1/rest',source:'Tidekin',desc:'Avec acces a de l\'eau : clear 1 HP sur soi ou allie Very Close.'},
   ],
 };
 
 const COMMUNITY_FEATURES = {
-  'Duneborne':[{type:'passive',name:'Duneborne Feature',cost:'',source:'Duneborne',desc:'(Voir fiche)'}],
-  'Freeborne':[{type:'passive',name:'Freeborne Feature',cost:'',source:'Freeborne',desc:'(Voir fiche)'}],
-  'Frostborne':[{type:'passive',name:'Frostborne Feature',cost:'',source:'Frostborne',desc:'(Voir fiche)'}],
-  'Hearthborne':[{type:'passive',name:'Hearthborne Feature',cost:'',source:'Hearthborne',desc:'(Voir fiche)'}],
+  'Duneborne':[{type:'passive',name:'Oasis',cost:'',source:'Duneborne',desc:'Short rest : soi ou allie relance un de de downtime move, garde le meilleur.'}],
+  'Freeborne':[{type:'passive',name:'Unbound',cost:'1/session',source:'Freeborne',desc:'Quand on roll avec Fear, le changer en roll avec Hope.'}],
+  'Frostborne':[{type:'passive',name:'Hardy',cost:'',source:'Frostborne',desc:'Au repos : clear 1 Hit Point.'}],
+  'Hearthborne':[{type:'action',name:'Close-Knit',cost:'1/long rest',source:'Hearthborne',desc:'Depenser X Hope pour donner X Hope a un allie Far.'}],
   'Loreborne':[{type:'passive',name:'Well-Read',cost:'',source:'Loreborne',desc:'Advantage sur rolls histoire/culture/politique.'}],
   'Orderborne':[{type:'passive',name:'Dedicated',cost:'1/rest',source:'Orderborne',desc:'3 valeurs. Si incarnées : 1d6 comme dé Hope.'}],
-  'Reborne':[{type:'passive',name:'Reborne Feature',cost:'',source:'Reborne',desc:'(Voir fiche)'}],
+  'Reborne':[{type:'action',name:'Found Family',cost:'1 Hope, 1/rest',source:'Reborne',desc:'Utiliser l\'Experience d\'un allie comme la sienne. Decrire comment le temps passe avec cet allie a prepare ce moment.'}],
   'Ridgeborne':[{type:'passive',name:'Steady',cost:'',source:'Ridgeborne',desc:'Advantage traverser falaises/survie.'}],
   'Seaborne':[{type:'passive',name:'Know the Tide',cost:'',source:'Seaborne',desc:'Token par Fear roll (max = niv). Dépenser : +1 par token.'}],
   'Slyborne':[{type:'passive',name:'Scoundrel',cost:'',source:'Slyborne',desc:'Advantage négociation criminels/mensonges/planque.'}],
   'Wanderborne':[{type:'action',name:'Nomadic Pack',cost:'1 Hope, 1/session',source:'Wanderborne',desc:'Sortir un objet utile du sac (avec le MJ).'}],
-  'Warborne':[{type:'passive',name:'Warborne Feature',cost:'',source:'Warborne',desc:'(Voir fiche)'}],
+  'Warborne':[{type:'passive',name:'Brave Face',cost:'1/session',source:'Warborne',desc:'Quand on devrait marquer un Stress, depenser 1 Hope a la place.'}],
   'Wildborne':[{type:'passive',name:'Lightfoot',cost:'',source:'Wildborne',desc:'Mouvement silencieux. Advantage pour se déplacer sans bruit.'}],
 };
 
