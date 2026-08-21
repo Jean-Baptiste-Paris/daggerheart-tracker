@@ -530,8 +530,13 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
   <details class="form-section">
     <summary>Domain Cards</summary>
     <div class="fsec-body">
+      <div class="domain-hint" id="class-domain-hint-2" style="display:none"></div>
+      <div class="preset-bar">
+        <select id="domain-preset-sel"><option value="">Preset domain card...</option></select>
+        <button class="btn-add-row" style="width:auto;padding:6px 12px;margin:0" id="btn-add-domain-preset">Ajouter</button>
+      </div>
       <div class="dyn-rows" id="domains-rows"></div>
-      <button class="btn-add-row" id="btn-add-domain">+ Ajouter une domain card</button>
+      <button class="btn-add-row" id="btn-add-domain">+ Domain card vide</button>
     </div>
   </details>
 
@@ -863,6 +868,192 @@ const COMMUNITY_FEATURES = {
   'Wanderborne':[{type:'action',name:'Nomadic Pack',cost:'1 Hope, 1/session',source:'Wanderborne',desc:'Sortir un objet utile du sac (avec le MJ).'}],
   'Warborne':[{type:'passive',name:'Brave Face',cost:'1/session',source:'Warborne',desc:'Quand on devrait marquer un Stress, depenser 1 Hope a la place.'}],
   'Wildborne':[{type:'passive',name:'Lightfoot',cost:'',source:'Wildborne',desc:'Mouvement silencieux. Advantage pour se déplacer sans bruit.'}],
+};
+
+const DOMAIN_PRESETS = {
+  'Arcana':[
+    {name:'Rune Ward',source:'Arcana · Niv. 1',desc:'Trinket de protection : depenser Hope pour reduire les degats d\'un 1d6.'},
+    {name:'Unleash Chaos',source:'Arcana · Niv. 1',desc:'Tokens debut de session. Depenser pour degats magiques scalables.'},
+    {name:'Wall Walk',source:'Arcana · Niv. 1',desc:'Grimper sur les murs et plafonds.'},
+    {name:'Cinder Grasp',source:'Arcana · Niv. 2',desc:'Attaque Melee. On Fire : degats par action tant qu\'en feu.'},
+    {name:'Floating Eye',source:'Arcana · Niv. 2',desc:'Orbe espion a Very Far range.'},
+    {name:'Counterspell',source:'Arcana · Niv. 3',desc:'Reaction : annuler un effet magique.'},
+    {name:'Flight',source:'Arcana · Niv. 3',desc:'Vol avec tokens qui s\'epuisent.'},
+    {name:'Blink Out',source:'Arcana · Niv. 4',desc:'Teleportation a Far range (+ allies Very Close pour 1 Hope chacun).'},
+    {name:'Preservation Blast',source:'Arcana · Niv. 4',desc:'Repousse toutes cibles Melee a Far range + degats.'},
+    {name:'Chain Lightning',source:'Arcana · Niv. 5',desc:'Foudre en chaine sur toutes cibles Close (+ propagation aux proches).'},
+    {name:'Premonition',source:'Arcana · Niv. 6',desc:'1/long rest : annuler un roll et ses consequences pour le refaire.'},
+    {name:'Rift Walker',source:'Arcana · Niv. 6',desc:'Marque un point de retour, puis ouvre un portail vers ce point.'},
+    {name:'Telekinesis',source:'Arcana · Niv. 7',desc:'Deplacer une cible a Far range, possibilite de la lancer sur quelqu\'un.'},
+    {name:'Arcanatouched',source:'Arcana · Niv. 7',desc:'Si 3+ cartes Arcana : +1 Spellcast + 1/rest swap Hope/Fear dice.',rollBonus:1},
+    {name:'Cloaking Blast',source:'Arcana · Niv. 8',desc:'Devient Cloaked apres un sort reussi.'},
+    {name:'Arcane Reflection',source:'Arcana · Niv. 8',desc:'Depenser Hope pour reflechir les degats magiques.'},
+    {name:'Confusing Aura',source:'Arcana · Niv. 9',desc:'Couches d\'illusion : chaque attaque a une chance d\'echouer.'},
+    {name:'Earthquake',source:'Arcana · Niv. 9',desc:'Toutes cibles Very Far (non volantes) : Vulnerable + degats + terrain difficile.'},
+    {name:'Sensory Projection',source:'Arcana · Niv. 9',desc:'Vision a distance d\'un lieu deja visite.'},
+    {name:'Adjust Reality',source:'Arcana · Niv. 10',desc:'Depenser 3 Hope pour changer le resultat numerique d\'un roll.'},
+    {name:'Falling Sky',source:'Arcana · Niv. 10',desc:'Degats magiques sur toutes cibles Far range, scalables avec Stress.'},
+  ],
+  'Blade':[
+    {name:'Get Back Up',source:'Blade · Niv. 1',desc:'Reduire la severite des degats Severe d\'un seuil.'},
+    {name:'Not Good Enough',source:'Blade · Niv. 1',desc:'Relancer les 1 et 2 sur les des de degats.'},
+    {name:'Whirlwind',source:'Blade · Niv. 1',desc:'Attaque reussie : depenser Hope pour toucher toutes cibles Very Close (demi-degats).'},
+    {name:'Reckless',source:'Blade · Niv. 2',desc:'Marquer Stress pour advantage sur une attaque.'},
+    {name:'Versatile Fighter',source:'Blade · Niv. 2',desc:'Utiliser un trait different pour une arme.'},
+    {name:'Deadly Focus',source:'Blade · Niv. 3',desc:'1/rest : +2 Proficiency contre une cible unique jusqu\'a sa defaite.'},
+    {name:'Fortified Armor',source:'Blade · Niv. 3',desc:'+2 aux damage thresholds quand en armure.'},
+    {name:'Champion\'s Edge',source:'Blade · Niv. 4',desc:'Critical success : depenser Hope pour clearer HP/Armor/forcer HP supplementaires.'},
+    {name:'Bladetouched',source:'Blade · Niv. 5',desc:'Si 3+ cartes Blade : +1 attack rolls + +2 Severe threshold.'},
+    {name:'Battle Cry',source:'Blade · Niv. 5',desc:'1/long rest : tous les allies clearer Stress + gagner Hope + advantage jusqu\'au prochain Fear fail.'},
+    {name:'Frenzy',source:'Blade · Niv. 6',desc:'1/long rest : +2 degats + +2 Severe threshold, mais impossible de marquer Armor.'},
+    {name:'Gore and Glory',source:'Blade · Niv. 7',desc:'Critical ou defaite d\'ennemi : Hope ou clearer Stress.'},
+    {name:'Reaper\'s Strike',source:'Blade · Niv. 8',desc:'1/long rest : forcer une cible a marquer 5 HP sans roll de degats.'},
+    {name:'Battle Monster',source:'Blade · Niv. 9',desc:'Marquer 2 Stress : inflige ses propres HP marques comme degats.'},
+    {name:'Onslaught',source:'Blade · Niv. 10',desc:'Toujours au moins 2 HP de degats (jamais Minor) + reaction sur attaque d\'allie.'},
+  ],
+  'Bone':[
+    {name:'Deft Maneuvers',source:'Bone · Niv. 1',desc:'1/rest : sprint Far range sans roll + bonus attaque.'},
+    {name:'I See It Coming',source:'Bone · Niv. 1',desc:'Attaque a distance : marquer Stress pour 1d10 bonus Evasion.'},
+    {name:'Untouchable',source:'Bone · Niv. 1',desc:'Bonus Evasion = 1/2 Agility.'},
+    {name:'Strategic Approach',source:'Bone · Niv. 2',desc:'Tokens post-long rest : advantage, clearer Stress allie, +de degats.'},
+    {name:'Redirect',source:'Bone · Niv. 3',desc:'Attaque ratee a distance : rediriger sur un adversaire Very Close.'},
+    {name:'Know Thy Enemy',source:'Bone · Niv. 3',desc:'Instinct Roll : obtenir infos sur un adversaire (HP, thresholds, features) + remove 1 Fear.'},
+    {name:'Bonetouched',source:'Bone · Niv. 4',desc:'Si 3+ cartes Bone : +1 Agility + 1/rest depenser 2 Hope pour annuler une attaque reussie.'},
+    {name:'Rapid Riposte',source:'Bone · Niv. 4',desc:'Attaque ratee en Melee : marquer Stress pour infliger ses degats d\'arme a l\'attaquant.'},
+    {name:'Recovery',source:'Bone · Niv. 4',desc:'Short rest : peut prendre un Long Rest move ; peut offrir le meme a un allie.'},
+    {name:'Cruel Precision',source:'Bone · Niv. 5',desc:'Bonus degats = Finesse ou Agility sur attaque reussie.'},
+    {name:'On the Brink',source:'Bone · Niv. 7',desc:'A 1 HP restant : ne marque jamais de Minor damage.'},
+    {name:'Deathrun',source:'Bone · Niv. 8',desc:'Sprint Far range en attaquant tout le monde sur le chemin (des reduits par cible).'},
+    {name:'Swift Step',source:'Bone · Niv. 10',desc:'Attaque ratee : clearer Stress (ou Hope si Stress plein).'},
+  ],
+  'Codex':[
+    {name:'Book of Ava',source:'Codex · Niv. 1',desc:'Power Push (repousse Far + degats), Tava\'s Armor (+2 Armor Score), Ice Spike.'},
+    {name:'Book of Illiat',source:'Codex · Niv. 1',desc:'Slumber (cible endormie), Arcane Barrage (Hope pour degats scalables), Telepathy.'},
+    {name:'Book of Tyfar',source:'Codex · Niv. 1',desc:'Wild Flame (3 cibles Melee), Magic Hand, Mysterious Mist.'},
+    {name:'Book of Sitil',source:'Codex · Niv. 2',desc:'Adjust Appearance, Parallela (2 cibles avec 1 attaque), Illusion.'},
+    {name:'Book of Vagras',source:'Codex · Niv. 2',desc:'Runic Lock, Arcane Door (portail Far range), Reveal (revele les choses cachees).'},
+    {name:'Book of Korvax',source:'Codex · Niv. 3',desc:'Levitation, Recant (faire oublier 1 minute), Rune Circle.'},
+    {name:'Book of Norai',source:'Codex · Niv. 4',desc:'Mystic Tether (Restrained + Stress), Fireball (Very Far range, zone).'},
+    {name:'Book of Exota',source:'Codex · Niv. 4',desc:'Repudiate (contrespell 1/rest), Create Construct (objet anime).'},
+    {name:'Book of Grynn',source:'Codex · Niv. 5',desc:'Arcane Deflection (1/long rest annuler 1 attaque), Time Lock, Wall of Flame.'},
+    {name:'Manifest Wall',source:'Codex · Niv. 5',desc:'Mur magique entre 2 points Far range.'},
+    {name:'Teleport',source:'Codex · Niv. 6',desc:'Teleporter le groupe vers un lieu connu (1/long rest).'},
+    {name:'Banish',source:'Codex · Niv. 6',desc:'Bannir une cible hors de ce plan (1/rest).'},
+    {name:'Codextouched',source:'Codex · Niv. 7',desc:'Si 3+ cartes Codex : Proficiency aux Spellcast Rolls + 1/rest swap carte sans cout.'},
+    {name:'Book of Vyola',source:'Codex · Niv. 7',desc:'Memory Delve (lire les souvenirs d\'une cible), Shared Clarity.'},
+    {name:'Safe Haven',source:'Codex · Niv. 8',desc:'Demeure interdimensionnelle pour se reposer (downtime move supplementaire).'},
+    {name:'Book of Ronin',source:'Codex · Niv. 9',desc:'Transform (se transformer en objet), Eternal Enervation (Vulnerable permanent).'},
+    {name:'Disintegration Wave',source:'Codex · Niv. 9',desc:'1/long rest : eliminer tous adversaires DC <= 15 dans Far range (1 Stress chacun).'},
+    {name:'Book of Yarrow',source:'Codex · Niv. 10',desc:'Timejammer (stopper le temps), Magic Immunity (2 Hope = immune degats mag).'},
+    {name:'Transcendent Union',source:'Codex · Niv. 10',desc:'Repartir HP/Stress entre creatures connectees.'},
+  ],
+  'Grace':[
+    {name:'Enrapture',source:'Grace · Niv. 1',desc:'Cible Close : Enraptured (attention fixee sur le lanceur, ne peut agir).'},
+    {name:'Inspirational Words',source:'Grace · Niv. 1',desc:'Tokens post-long rest : clearer Stress/HP/Hope pour les allies.'},
+    {name:'Tell No Lies',source:'Grace · Niv. 1',desc:'Cible ne peut pas mentir tant qu\'elle est Close range.'},
+    {name:'Troublemaker',source:'Grace · Niv. 2',desc:'Taunter une cible : lui faire marquer du Stress (1d par Proficiency).'},
+    {name:'Hypnotic Shimmer',source:'Grace · Niv. 2',desc:'1/rest : Stunned + Stress sur toutes cibles Close devant soi.'},
+    {name:'Invisibility',source:'Grace · Niv. 3',desc:'PJ ou allie Invisible (tokens qui s\'epuisent).'},
+    {name:'Words of Discord',source:'Grace · Niv. 4',desc:'Forcer un adversaire a attaquer un autre adversaire.'},
+    {name:'Share the Burden',source:'Grace · Niv. 5',desc:'Transferer le Stress d\'un allie sur soi + Hope par Stress transfere.'},
+    {name:'Gracetouched',source:'Grace · Niv. 5',desc:'Si 3+ cartes Grace : marquer Armor Slot a la place de Stress + choisir HP ou Stress pour degats forces.'},
+    {name:'Astral Projection',source:'Grace · Niv. 6',desc:'1/long rest : projection physique n\'importe ou (voir/entendre/agir a distance).'},
+    {name:'Mass Enrapture',source:'Grace · Niv. 6',desc:'Tous les cibles Far range : Enraptured.'},
+    {name:'Copycat',source:'Grace · Niv. 7',desc:'1/long rest : copier n\'importe quelle carte de niveau <= 5 d\'un allie.'},
+    {name:'Encore',source:'Grace · Niv. 8',desc:'Quand un allie inflige des degats, repliquer les memes degats sur la meme cible.'},
+    {name:'Notorious',source:'Grace · Niv. 9',desc:'+2 a deux Experiences, reduction de prix, nourriture gratuite (carte permanente).'},
+  ],
+  'Midnight':[
+    {name:'Pick and Pull',source:'Midnight · Niv. 1',desc:'Advantage sur crochetage, desamorcage et vol.'},
+    {name:'Rain of Blades',source:'Midnight · Niv. 1',desc:'Toutes cibles Very Close : degats mag (+ d4 bonus si Vulnerable).'},
+    {name:'Uncanny Disguise',source:'Midnight · Niv. 2',desc:'Se deguiser en n\'importe quel humanoide.'},
+    {name:'Midnight Spirit',source:'Midnight · Niv. 2',desc:'Esprit serviteur + attaque a Very Far range.'},
+    {name:'Shadowbind',source:'Midnight · Niv. 2',desc:'Toutes cibles Very Close : Restrained par leur ombre.'},
+    {name:'Veil of Night',source:'Midnight · Niv. 3',desc:'Rideau de tenebres Far range, seul le lanceur peut voir a travers.'},
+    {name:'Stealth Expertise',source:'Midnight · Niv. 3',desc:'Roll with Fear en furtivite : marquer Stress pour roll with Hope.'},
+    {name:'Hush',source:'Midnight · Niv. 4',desc:'Zone de silence qui suit une cible (ne peut pas lancer de sorts).'},
+    {name:'Dark Whispers',source:'Midnight · Niv. 5',desc:'Communiquer mentalement avec quelqu\'un touche + espionner.'},
+    {name:'Mass Disguise',source:'Midnight · Niv. 5',desc:'Deguiser tout le groupe en meme temps.'},
+    {name:'Midnighttouched',source:'Midnight · Niv. 5',desc:'Si 3+ cartes Midnight : intercepter 1 Fear/session + degats bonus avec de Fear.'},
+    {name:'Vanishing Dodge',source:'Midnight · Niv. 6',desc:'Attaque physique ratee : devient Hidden + teleportation Close range.'},
+    {name:'Night Terror',source:'Midnight · Niv. 7',desc:'1/long rest : Horrified (Vulnerable + vol de Fear MJ + degats scalables).'},
+    {name:'Eclipse',source:'Midnight · Niv. 8',desc:'1/long rest : obscurite totale Far range (seuls PJs voient) + Stress sur adversaires.'},
+    {name:'Specter of the Dark',source:'Midnight · Niv. 9',desc:'Devient Spectral (immune degats physiques + passe a travers les murs).'},
+  ],
+  'Sage':[
+    {name:'Nature\'s Tongue',source:'Sage · Niv. 1',desc:'Parler aux plantes et animaux ; bonus Spellcast en environnement naturel.'},
+    {name:'Vicious Entangle',source:'Sage · Niv. 1',desc:'Cible Far range : Restrained + degats (+ 2e cible Very Close pour 1 Hope).'},
+    {name:'Conjure Swarm',source:'Sage · Niv. 2',desc:'Beetles (reduire degats) OU Fire Flies (AoE Close).'},
+    {name:'Natural Familiar',source:'Sage · Niv. 2',desc:'Familier nature : +d4 degats si en Melee, peut voir a travers ses yeux.'},
+    {name:'Towering Stalk',source:'Sage · Niv. 3',desc:'Stalk grimpable Far range + attaque d\'eruption.'},
+    {name:'Healing Field',source:'Sage · Niv. 4',desc:'1/long rest : clearer 1 HP (ou 2 pour 3 Hope) sur tout le monde Close range.'},
+    {name:'Wild Fortress',source:'Sage · Niv. 5',desc:'Dome protecteur ou on ne peut pas etre cible (mais pas d\'attaque).'},
+    {name:'Sagetouched',source:'Sage · Niv. 5',desc:'Si 3+ cartes Sage : +1 Spellcast en nature + 1/rest doubler Agility ou Instinct.'},
+    {name:'Wild Surge',source:'Sage · Niv. 6',desc:'1/long rest : de croissant s\'ajoute a tous les action rolls.'},
+    {name:'Forest Sprites',source:'Sage · Niv. 6',desc:'Sprites : +1 attaques allies et Armor Slot supplementaire.'},
+    {name:'Rejuvenation Barrier',source:'Sage · Niv. 7',desc:'1/rest : barriere Very Close, clearer d4 HP, resistance physique.'},
+    {name:'Plant Dominion',source:'Sage · Niv. 8',desc:'1/long rest : remodeler completement la vegetation dans Far range.'},
+    {name:'Tempest',source:'Sage · Niv. 9',desc:'Blizzard/Hurricane/Sandstorm sur toutes cibles Far range (persistant).'},
+    {name:'Force of Nature',source:'Sage · Niv. 10',desc:'Forme de nature spirit : +bonus degats, absorbe ennemis vaincus, immunite Restrained.'},
+  ],
+  'Splendor':[
+    {name:'Mending Touch',source:'Splendor · Niv. 1',desc:'Quelques minutes + 2 Hope : clearer 1 HP ou Stress (3 HP/Stress si revelation intime).'},
+    {name:'Reassurance',source:'Splendor · Niv. 1',desc:'1/rest : permettre a un allie de relancer un roll avant les consequences.'},
+    {name:'Healing Hands',source:'Splendor · Niv. 1',desc:'Clearer 2 HP ou 2 Stress (ou 1 et 1 sur echec). 1 cible / long rest.'},
+    {name:'Divination',source:'Splendor · Niv. 2',desc:'1/long rest : question oui/non sur l\'avenir proche (2 Hope).'},
+    {name:'Life Ward',source:'Splendor · Niv. 2',desc:'2 Hope : annuler 1 death move de l\'allie cible.'},
+    {name:'Smite',source:'Splendor · Niv. 3',desc:'1/rest : doubler les degats d\'une attaque (degats mag, quel que soit l\'arme).'},
+    {name:'Restoration',source:'Splendor · Niv. 3',desc:'Tokens post-long rest : clearer HP/Stress/conditions.'},
+    {name:'Zone of Protection',source:'Splendor · Niv. 4',desc:'1/long rest : zone Close range, reduction des degats par un de croissant.'},
+    {name:'Healing Strike',source:'Splendor · Niv. 4',desc:'Inflige des degats + clearer 1 HP sur un allie Close range.'},
+    {name:'Splendortouched',source:'Splendor · Niv. 4',desc:'Si 3+ cartes Splendor : +2 Severe threshold + 1/long rest convertir HP vers Stress/Hope.'},
+    {name:'Shield Aura',source:'Splendor · Niv. 5',desc:'Armor Slot reduit de 2 seuils au lieu de 1 (1 cible a la fois).'},
+    {name:'Stunning Sunlight',source:'Splendor · Niv. 6',desc:'Toutes cibles en face Far range : Stunned + degats.'},
+    {name:'Overwhelming Aura',source:'Splendor · Niv. 7',desc:'Presence = Spellcast trait ; adversaires marquent Stress quand ils la ciblent.'},
+    {name:'Salvation Beam',source:'Splendor · Niv. 8',desc:'Marquer Stress : clearer HP sur une ligne d\'allies Far range.'},
+    {name:'Invigoration',source:'Splendor · Niv. 9',desc:'Depenser Hope pour tenter de recharger une capacite limitee (1/rest, 1/session).'},
+    {name:'Resurrection',source:'Splendor · Niv. 10',desc:'1/long rest : ressusciter un mort depuis <= 2 ans (risque de perdre la carte).'},
+  ],
+  'Valor':[
+    {name:'Bare Bones',source:'Valor · Niv. 1',desc:'Sans armure : Armor Score = 2+Strength, thresholds fixes par tier.'},
+    {name:'I Am Your Shield',source:'Valor · Niv. 1',desc:'Marquer Stress pour intercepter une attaque destinee a un allie Very Close.'},
+    {name:'Body Basher',source:'Valor · Niv. 1',desc:'Bonus degats Melee = Strength.'},
+    {name:'Bold Presence',source:'Valor · Niv. 1',desc:'Ajouter Strength aux Presence Rolls + 1/rest eviter une condition.'},
+    {name:'Critical Inspiration',source:'Valor · Niv. 2',desc:'1/rest : critical success = tous allies Very Close clearer Stress ou gagner Hope.'},
+    {name:'Goad Them On',source:'Valor · Niv. 2',desc:'Provoquer une cible Close range : elle doit attaquer le PJ avec desavantage.'},
+    {name:'Armorer',source:'Valor · Niv. 3',desc:'+1 Armor Score + pendant un repos, les allies clearent aussi un Armor Slot.'},
+    {name:'Rousing Strike',source:'Valor · Niv. 4',desc:'1/rest : critical success = tout le monde clearer HP ou des de Stress.'},
+    {name:'Rise Up',source:'Valor · Niv. 4',desc:'+Proficiency au Severe threshold + marque 3+ HP = clearer Stress.'},
+    {name:'Valortouched',source:'Valor · Niv. 5',desc:'Si 3+ cartes Valor : +1 Armor Score + 1/rest reaction sur degats sans Armor Slot.'},
+    {name:'Hold the Line',source:'Valor · Niv. 6',desc:'Depenser Hope : adversaires entrant Very Close range = Restrained en Melee.'},
+    {name:'Ground Pound',source:'Valor · Niv. 7',desc:'2 Hope : attaque tous Very Close range = repousses a Far range.'},
+    {name:'Lead by Example',source:'Valor · Niv. 8',desc:'Infliger degats + Stress : prochain allie attaquant la meme cible gagne Hope ou clear Stress.'},
+    {name:'Unbreakable',source:'Valor · Niv. 9',desc:'Au lieu d\'un death move : lancer 1d10 et clearer autant de HP (puis carte dans le vault).'},
+    {name:'Unyielding Armor',source:'Valor · Niv. 10',desc:'Quand on marque un Armor Slot : lancer Proficiency ds, sur 6+ reduire severite sans marquer le slot.'},
+  ],
+  'Dread':[
+    {name:'Blighting Strike',source:'Dread · Niv. 1',desc:'Spellcast Roll Far range. Hope : d6+1 mag. Fear : d10+1 mag. Prochaine attaque cible = demi-degats.'},
+    {name:'Umbral Veil',source:'Dread · Niv. 1',desc:'1/rest : marquer Stress pour drape d\'ombre. Tokens = Fear du pool MJ. Depenser tokens apres attaque : -1 au resultat par token.'},
+    {name:'Voice of Dread',source:'Dread · Niv. 1',desc:'Parler magiquement a une cible visible. Succès : cible marque Stress et Restrained.'},
+    {name:'Hideous Retribution',source:'Dread · Niv. 2',desc:'Allie Close prend degats : reaction Spellcast. Succès : marquer Stress pour infliger d6 mag.'},
+    {name:'Siphon Essence',source:'Dread · Niv. 2',desc:'1/long rest : cible Very Close prend d12+4 mag. On clear autant de HP que degats infliges.'},
+    {name:'Shared Trauma',source:'Dread · Niv. 3',desc:'1/rest : transferer HP entre deux creatures consentantes Melee range.'},
+    {name:'Terrify',source:'Dread · Niv. 3',desc:'Spellcast Roll Close range. Succès : cible marque 1d4 Stress + fuit. Fear : cible aussi Vulnerable.'},
+    {name:'Chains of Affliction',source:'Dread · Niv. 4',desc:'Marquer 2 Stress pour Chain une cible Close. Ses attaques infligent 1 HP de moins.'},
+    {name:'Summon Horror',source:'Dread · Niv. 4',desc:'Marquer Stress pour invoquer creature d8+1 mag Far range. Cible doit Reaction Roll (12) ou marquer Stress.'},
+    {name:'Dire Strike',source:'Dread · Niv. 5',desc:'Quand attaque inflige HP, depenser Hope pour drain : le MJ perd 1 Fear.'},
+    {name:'Spectral Mist',source:'Dread · Niv. 5',desc:'2 Hope : brume Close range, allies temporairement incorporels (immunite physique, traverse murs).'},
+    {name:'Jump Scare',source:'Dread · Niv. 6',desc:'Sur degats magiques : marquer Stress pour teleportation Melee avec cible. Elle est Vulnerable.'},
+    {name:'Darkfire',source:'Dread · Niv. 6',desc:'Depenser N Hope : cibler N adversaires Close range. Reaction Roll (15). Echec : d8+6 mag. Succès : demi-degats.'},
+    {name:'Dread-Touched',source:'Dread · Niv. 7',desc:'Si 4+ cartes Dread : Fear = marquer 2 Stress pour empecher MJ de gagner 1 Fear. 1/rest bonus = Fear pool MJ.'},
+    {name:'Wall of Hunger',source:'Dread · Niv. 7',desc:'Mur necromatique Far range. Creature dedans ou qui traverse : 2 Stress.'},
+    {name:'Dark Army',source:'Dread · Niv. 8',desc:'1/long rest : invoquer 8 demons-tokens. Depenser tokens : +1d8 degats ou -1d8 degats recus.'},
+    {name:'Eldritch Flesh',source:'Dread · Niv. 8',desc:'+1 seuils degats par Stress marque. Fear : depenser 2 Hope pour clear 1 Armor Slot.'},
+    {name:'Damnation',source:'Dread · Niv. 9',desc:'Spellcast Far range. Marquer N Stress pour lancer N d20s, total = degats mag. Si cible vaincue : tous adversaires marquent Stress.'},
+    {name:'Savor the Anguish',source:'Dread · Niv. 9',desc:'Quand adversaire Close prend Severe : clear 1 Stress.'},
+    {name:'Avatar of Terror',source:'Dread · Niv. 10',desc:'Transformation. +1d6 degats par Fear pool MJ. Hope quand MJ depense Fear. Cout : 1 Hope par action roll.'},
+    {name:'Invoke Torment',source:'Dread · Niv. 10',desc:'Double degats sur cibles avec tout le Stress marque. Adversaire vaincu = gagner Hope.'},
+  ],
 };
 
 const STORAGE_CHARS = 'daggerheart-chars-v1';
@@ -2935,6 +3126,7 @@ function applyClassDefaults() {
     if (hint) hint.style.display = 'none';
   }
   updateFeaturePresets();
+  updateDomainPresets();
 }
 
 function buildWeaponPresetOptions() {
@@ -3051,6 +3243,40 @@ function onFeaturePresetAdd() {
   sel.value = '';
 }
 
+function updateDomainPresets() {
+  const sel = document.getElementById('domain-preset-sel');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Preset domain card...</option>';
+  const cls = readCombo('f-class-sel', 'f-class');
+  const d = CLASS_DEFAULTS[cls];
+  const hint2 = document.getElementById('class-domain-hint-2');
+  const domains = d ? d.domains : Object.keys(DOMAIN_PRESETS);
+  if (d && hint2) { hint2.textContent = 'Domaines de ' + cls + ' : ' + d.domains.join(' & '); hint2.style.display = ''; }
+  else if (hint2) { hint2.style.display = 'none'; }
+  domains.forEach(dom => {
+    const cards = DOMAIN_PRESETS[dom];
+    if (!cards) return;
+    const og = document.createElement('optgroup');
+    og.label = dom;
+    cards.forEach((c, i) => {
+      const o = document.createElement('option');
+      o.value = dom + ':' + i;
+      o.textContent = c.name + ' (' + c.source.split('·')[1].trim() + ')';
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+}
+
+function onDomainPresetAdd() {
+  const sel = document.getElementById('domain-preset-sel');
+  if (!sel || !sel.value) return;
+  const [dom, idx] = sel.value.split(':');
+  const c = DOMAIN_PRESETS[dom] && DOMAIN_PRESETS[dom][parseInt(idx)];
+  if (c) addDomainRow({...c});
+  sel.value = '';
+}
+
 function setupFormAutoCalc() {
   ['f-thr-minor-base','f-thr-severe-base','f-level'].forEach(id=>{
     const el = document.getElementById(id);
@@ -3081,9 +3307,12 @@ function setupFormAutoCalc() {
   if (wpnPresetBtn) wpnPresetBtn.addEventListener('click', onWeaponPresetAdd);
   const featPresetBtn = document.getElementById('btn-add-feature-preset');
   if (featPresetBtn) featPresetBtn.addEventListener('click', onFeaturePresetAdd);
+  const domPresetBtn = document.getElementById('btn-add-domain-preset');
+  if (domPresetBtn) domPresetBtn.addEventListener('click', onDomainPresetAdd);
   buildWeaponPresetOptions();
   buildArmorPresetOptions();
   updateFeaturePresets();
+  updateDomainPresets();
 }
 
 function applyFormAccent() {
