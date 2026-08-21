@@ -98,6 +98,11 @@ input[type=checkbox]{accent-color:var(--accent)}
 .dyn-row-hd span{font-size:11px;font-weight:700;color:var(--muted);flex:1}
 .btn-add-row{width:100%;padding:8px;border:1px dashed var(--border-strong);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;margin-top:4px;display:block}
 .btn-add-row:hover{color:var(--accent);border-color:var(--accent-dark)}
+.btn-move{background:transparent;border:1px solid var(--border);color:var(--muted);padding:0;width:20px;height:20px;border-radius:3px;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;line-height:1}
+.btn-move:hover{color:var(--accent);border-color:var(--accent-dark)}
+.preset-bar{display:flex;gap:6px;margin-bottom:8px;align-items:center}
+.preset-bar select{flex:1;font-size:12px;padding:6px 8px}
+.domain-hint{font-size:11px;color:var(--accent);padding:4px 8px;background:var(--panel-2);border-radius:3px;border-left:2px solid var(--accent-dark);margin-bottom:6px;display:none}
 .form-footer{display:flex;gap:10px;margin-top:20px;padding:16px 0 32px;border-top:1px solid var(--border);flex-wrap:wrap}
 
 /* ---- TRACKER STYLES (from thelkri.html) ---- */
@@ -449,6 +454,8 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
     </div>
   </details>
 
+  <div class="domain-hint" id="class-domain-hint"></div>
+
   <details class="form-section" open>
     <summary>Traits</summary>
     <div class="fsec-body">
@@ -462,6 +469,9 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
       <div class="form-row cols2">
         <div class="form-field"><label>Évasion</label><input type="number" id="f-evasion" min="1" max="30" value="10"></div>
         <div class="form-field"><label>Note évasion</label><input type="text" id="f-evasion-note" placeholder="ex: 10 + 2 Untouchable"></div>
+      </div>
+      <div class="preset-bar">
+        <select id="armor-preset-sel"><option value="">Preset armure...</option></select>
       </div>
       <div class="form-row cols2">
         <div class="form-field"><label>Armure (nom)</label><input type="text" id="f-armor-name" placeholder="Leather Armor"></div>
@@ -479,8 +489,8 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
       </div>
       <div class="thr-preview" id="thr-calc-preview" style="display:none"></div>
       <div class="form-row cols2">
-        <div class="form-field"><label>Seuil Majeur final (≥ X = 2 PV)</label><input type="number" id="f-thr-minor" min="1" value="6" placeholder="6"></div>
-        <div class="form-field"><label>Seuil Sévère final (≥ X = 3 PV)</label><input type="number" id="f-thr-severe" min="1" value="13" placeholder="13"></div>
+        <div class="form-field"><label>Seuil Majeur final</label><input type="number" id="f-thr-minor" min="1" value="6" placeholder="6" readonly style="opacity:.6;cursor:default"></div>
+        <div class="form-field"><label>Seuil Sévère final</label><input type="number" id="f-thr-severe" min="1" value="13" placeholder="13" readonly style="opacity:.6;cursor:default"></div>
       </div>
     </div>
   </details>
@@ -488,8 +498,12 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
   <details class="form-section">
     <summary>Armes</summary>
     <div class="fsec-body">
+      <div class="preset-bar">
+        <select id="weapon-preset-sel"><option value="">Preset arme...</option></select>
+        <button class="btn-add-row" style="width:auto;padding:6px 12px;margin:0" id="btn-add-weapon-preset">Ajouter</button>
+      </div>
       <div class="dyn-rows" id="weapons-rows"></div>
-      <button class="btn-add-row" id="btn-add-weapon">+ Ajouter une arme</button>
+      <button class="btn-add-row" id="btn-add-weapon">+ Arme vide</button>
     </div>
   </details>
 
@@ -504,8 +518,12 @@ input[type=color]{width:48px;height:34px;padding:2px;cursor:pointer;border-radiu
   <details class="form-section">
     <summary>Features de classe &amp; ancêtre</summary>
     <div class="fsec-body">
+      <div class="preset-bar">
+        <select id="feature-preset-sel"><option value="">Preset feature...</option></select>
+        <button class="btn-add-row" style="width:auto;padding:6px 12px;margin:0" id="btn-add-feature-preset">Ajouter</button>
+      </div>
       <div class="dyn-rows" id="features-rows"></div>
-      <button class="btn-add-row" id="btn-add-feature">+ Ajouter une feature</button>
+      <button class="btn-add-row" id="btn-add-feature">+ Feature vide</button>
     </div>
   </details>
 
@@ -606,6 +624,245 @@ const CLASS_SUBCLASSES = {
   'Warrior':   ['Call of the Brave', 'Call of the Slaughter'],
   'Witch':     ['Hedge', 'Moon'],
   'Wizard':    ['School of Knowledge', 'School of War']
+};
+
+const CLASS_DEFAULTS = {
+  'Assassin':  {hp:5,evasion:12,domains:['Blade','Midnight']},
+  'Bard':      {hp:5,evasion:10,domains:['Grace','Codex']},
+  'Brawler':   {hp:6,evasion:10,domains:['Valor','Bone']},
+  'Druid':     {hp:6,evasion:10,domains:['Sage','Arcana']},
+  'Guardian':  {hp:7,evasion:9, domains:['Valor','Blade']},
+  'Ranger':    {hp:6,evasion:12,domains:['Bone','Sage']},
+  'Rogue':     {hp:6,evasion:12,domains:['Midnight','Grace']},
+  'Seraph':    {hp:7,evasion:9, domains:['Splendor','Valor']},
+  'Sorcerer':  {hp:6,evasion:10,domains:['Arcana','Midnight']},
+  'Warlock':   {hp:5,evasion:11,domains:['Dread','Grace']},
+  'Warrior':   {hp:6,evasion:11,domains:['Blade','Bone']},
+  'Witch':     {hp:6,evasion:10,domains:['Sage','Dread']},
+  'Wizard':    {hp:5,evasion:11,domains:['Codex','Splendor']}
+};
+
+const WEAPON_PRESETS = {
+  'Primaires physiques':[
+    {name:'Longsword',kind:'Primary · 2H',trait:'Agility',range:'Melee',formula:'d8',dmgType:'phy',feature:''},
+    {name:'Broadsword',kind:'Primary · 1H',trait:'Strength',range:'Melee',formula:'d8',dmgType:'phy',feature:''},
+    {name:'Rapier',kind:'Primary · 1H',trait:'Finesse',range:'Melee',formula:'d8',dmgType:'phy',feature:''},
+    {name:'Dagger',kind:'Primary · 1H',trait:'Finesse',range:'Melee',formula:'d6',dmgType:'phy',feature:''},
+    {name:'Battleaxe',kind:'Primary · 2H',trait:'Strength',range:'Melee',formula:'d8',dmgType:'phy',feature:''},
+    {name:'Greatsword',kind:'Primary · 2H',trait:'Strength',range:'Melee',formula:'d10',dmgType:'phy',feature:'Massive : -1 Evasion, +1 dé drop lowest'},
+    {name:'Spear',kind:'Primary · 2H',trait:'Agility',range:'Very Close',formula:'d8',dmgType:'phy',feature:''},
+    {name:'Halberd',kind:'Primary · 2H',trait:'Strength',range:'Very Close',formula:'d8',dmgType:'phy',feature:''},
+    {name:'Shortbow',kind:'Primary · 2H',trait:'Agility',range:'Far',formula:'d6',dmgType:'phy',feature:''},
+    {name:'Longbow',kind:'Primary · 2H',trait:'Agility',range:'Very Far',formula:'d8',dmgType:'phy',feature:''},
+    {name:'Crossbow',kind:'Primary · 2H',trait:'Finesse',range:'Far',formula:'d8',dmgType:'phy',feature:'Reloading'},
+    {name:'Katana',kind:'Primary · 2H',trait:'Agility',range:'Melee',formula:'d10',dmgType:'phy',feature:'Quick'},
+    {name:'Scimitar',kind:'Primary · 1H',trait:'Agility',range:'Melee',formula:'d8',dmgType:'phy',feature:''},
+  ],
+  'Primaires magiques':[
+    {name:'Greatstaff',kind:'Primary · 2H',trait:'Knowledge',range:'Far',formula:'d8',dmgType:'mag',feature:''},
+    {name:'Wand',kind:'Primary · 1H',trait:'Knowledge',range:'Far',formula:'d6',dmgType:'mag',feature:''},
+    {name:'Scepter',kind:'Primary · 1H',trait:'Presence',range:'Far',formula:'d6',dmgType:'mag',feature:''},
+    {name:'Dualstaff',kind:'Primary · 2H',trait:'Instinct',range:'Close',formula:'d8',dmgType:'mag',feature:''},
+    {name:'Shortstaff',kind:'Primary · 1H',trait:'Presence',range:'Close',formula:'d6',dmgType:'mag',feature:''},
+    {name:'Arcane Gauntlets',kind:'Primary · 2H',trait:'Instinct',range:'Melee',formula:'d6',dmgType:'mag',feature:''},
+    {name:'Arcane Rifle',kind:'Primary · 2H',trait:'Knowledge',range:'Very Far',formula:'d8',dmgType:'mag',feature:'Reloading'},
+  ],
+  'Secondaires':[
+    {name:'Shortsword',kind:'Secondary · 1H',trait:'Agility',range:'Melee',formula:'d8',dmgType:'phy',feature:'Paired : +2 dégâts arme principale (Melee)'},
+    {name:'Small Dagger',kind:'Secondary · 1H',trait:'Finesse',range:'Melee',formula:'d8',dmgType:'phy',feature:'Paired : +2 dégâts arme principale (Melee)'},
+    {name:'Round Shield',kind:'Secondary · 1H',trait:'Strength',range:'Melee',formula:'d4',dmgType:'phy',feature:'Protective : +1 Armor Score'},
+    {name:'Tower Shield',kind:'Secondary · 1H',trait:'Strength',range:'Melee',formula:'d6',dmgType:'phy',feature:'Barrier : +2 Armor Score, -1 Evasion'},
+    {name:'Whip',kind:'Secondary · 1H',trait:'Presence',range:'Very Close',formula:'d6',dmgType:'phy',feature:'Startling : repousse Melee vers Close'},
+    {name:'Hand Crossbow',kind:'Secondary · 1H',trait:'Finesse',range:'Far',formula:'d6+1',dmgType:'phy',feature:''},
+    {name:'Hatchet',kind:'Secondary · 1H',trait:'Strength',range:'Close',formula:'d6',dmgType:'phy',feature:'Returning'},
+    {name:'Throwing Knives',kind:'Secondary · 1H',trait:'Finesse',range:'Close',formula:'d6',dmgType:'phy',feature:'Quick'},
+  ]
+};
+
+const ARMOR_PRESETS = [
+  {name:'Mage Robes',thrMinor:4,thrSevere:10,score:2,feature:''},
+  {name:'Gambeson',thrMinor:5,thrSevere:10,score:3,feature:'Flexible : +1 Evasion'},
+  {name:'Leather',thrMinor:6,thrSevere:12,score:2,feature:''},
+  {name:'Brigandine',thrMinor:6,thrSevere:12,score:3,feature:''},
+  {name:'Chainmail',thrMinor:7,thrSevere:14,score:3,feature:'Heavy : -1 Evasion'},
+  {name:'Scale Mail',thrMinor:7,thrSevere:14,score:3,feature:''},
+  {name:'Full Plate',thrMinor:8,thrSevere:16,score:4,feature:'Very Heavy : -1 Evasion, -1 Agility'},
+  {name:'Banded',thrMinor:8,thrSevere:16,score:4,feature:''},
+];
+
+const FEATURE_PRESETS = {
+  'Assassin':[
+    {type:'action',name:'Marked for Death',cost:'1 Stress',source:'Assassin',desc:'Marquer cible sur attaque réussie. +Xd4 dégâts (X = tier).'},
+    {type:'action',name:'Get In & Get Out',cost:'1 Hope',source:'Assassin',desc:'Demander au MJ un chemin rapide. Prochain roll avec advantage.'},
+    {type:'action',name:'Deadly Determination',cost:'3 Hope',source:'Assassin',desc:'Hope Feature : clear 2 Stress.'},
+  ],
+  'Bard':[
+    {type:'action',name:'Rally',cost:'1/session',source:'Bard',desc:'Distribuer Rally Die (d6, d8 niv.5). Action/reaction/dégâts/clear Stress.'},
+    {type:'action',name:'Make a Scene',cost:'3 Hope',source:'Bard',desc:'Hope Feature : Distract cible Close, -2 Difficulty.'},
+  ],
+  'Brawler':[
+    {type:'passive',name:'I Am the Weapon',cost:'',source:'Brawler',desc:"Brawler's Strike : d8+d6 phy Melee, trait au choix. +1 Evasion. Pas d'autre arme active."},
+    {type:'action',name:'Combo Strike',cost:'1 Stress',source:'Brawler',desc:'Après dégâts Melee, Combo Die (d4). Tant que ça monte, relancer et cumuler.'},
+    {type:'action',name:'Square Up',cost:'3 Hope',source:'Brawler',desc:'Hope Feature : cible Close temporairement Vulnerable.'},
+  ],
+  'Druid':[
+    {type:'action',name:'Beastform',cost:'1 Stress',source:'Druid',desc:'Transformation en créature de son tier. Pas de sorts ni armes, cartes de domaine OK.'},
+    {type:'passive',name:'Wildtouch',cost:'',source:'Druid',desc:'Effets mineurs de nature à volonté.'},
+    {type:'action',name:'Evolution',cost:'3 Hope',source:'Druid',desc:'Hope Feature : Beastform sans Stress + trait +1.'},
+  ],
+  'Guardian':[
+    {type:'action',name:'Unstoppable',cost:'1/long rest',source:'Guardian',desc:'Unstoppable Die (d4, d6 niv.5). Réduit dégâts phys, immunité Restrained/Vulnerable.'},
+    {type:'action',name:'Frontline Tank',cost:'3 Hope',source:'Guardian',desc:'Hope Feature : clear 2 Armor Slots.'},
+  ],
+  'Ranger':[
+    {type:'action',name:"Ranger's Focus",cost:'1 Hope',source:'Ranger',desc:'Focus cible. Direction connue, Stress sur dégâts, relance si raté.'},
+    {type:'action',name:'Hold Them Off',cost:'3 Hope',source:'Ranger',desc:'Hope Feature : 1 attaque touche 3 cibles dans la portée.'},
+  ],
+  'Rogue':[
+    {type:'passive',name:'Cloaked',cost:'',source:'Rogue',desc:'Hidden amélioré. Reste invisible même immobile.'},
+    {type:'passive',name:'Sneak Attack',cost:'',source:'Rogue',desc:'Si Cloaked ou allié en Melee de la cible : +Xd6 dégâts (X = tier).'},
+    {type:'action',name:"Rogue's Dodge",cost:'3 Hope',source:'Rogue',desc:'Hope Feature : +2 Evasion jusqu\'au prochain coup.'},
+  ],
+  'Seraph':[
+    {type:'passive',name:'Prayer Dice',cost:'',source:'Seraph',desc:'Début de session : Xd6 (X = Spellcast). Réduire dégâts, booster jets, gagner Hope.'},
+    {type:'action',name:'Life Support',cost:'3 Hope',source:'Seraph',desc:'Hope Feature : clear 1 HP allié Close.'},
+  ],
+  'Sorcerer':[
+    {type:'passive',name:'Arcane Sense',cost:'',source:'Sorcerer',desc:'Détecte la magie dans Close range.'},
+    {type:'passive',name:'Minor Illusion',cost:'',source:'Sorcerer',desc:'Illusion mineure (Spellcast Roll DC 10).'},
+    {type:'action',name:'Volatile Magic',cost:'3 Hope',source:'Sorcerer',desc:'Hope Feature : relancer dés de dégâts magiques.'},
+  ],
+  'Warlock':[
+    {type:'passive',name:"Patron's Pact",cost:'',source:'Warlock',desc:'Patron Die (d6, d8 niv.5). Dépenser Favor pour l\'ajouter aux rolls.'},
+    {type:'passive',name:'Favor',cost:'',source:'Warlock',desc:'3 Favor. Gain via downtime ou succès Hope.'},
+    {type:'action',name:"Patron's Boon",cost:'3 Hope',source:'Warlock',desc:'Hope Feature : sur échec, relancer avec advantage.'},
+  ],
+  'Warrior':[
+    {type:'reaction',name:'Attack of Opportunity',cost:'',source:'Warrior',desc:'Adversaire Melee tente de partir : reaction roll. Succès : bloquer/dégâts/suivre.'},
+    {type:'passive',name:'Combat Training',cost:'',source:'Warrior',desc:'Ignore burden. Bonus dégâts phys = niveau.'},
+    {type:'action',name:'No Mercy',cost:'3 Hope',source:'Warrior',desc:'Hope Feature : +1 attack rolls jusqu\'au repos.',rollBonus:1},
+  ],
+  'Witch':[
+    {type:'action',name:'Hex',cost:'1 Stress',source:'Witch',desc:'Hex cible Far. Pénalité dégâts/Difficulty = tier. Max cibles = Spellcast.'},
+    {type:'action',name:'Commune',cost:'1/long rest',source:'Witch',desc:'Communier avec entité. Xd6 (X = Spellcast). 1-3 sensation, 4-5 vision, 6 expérience.'},
+    {type:'action',name:"Witch's Charm",cost:'3 Hope',source:'Witch',desc:'Hope Feature : échec allié Far = succès avec Fear.'},
+  ],
+  'Wizard':[
+    {type:'passive',name:'Prestidigitation',cost:'',source:'Wizard',desc:'Effets magiques mineurs à volonté.'},
+    {type:'passive',name:'Strange Patterns',cost:'',source:'Wizard',desc:'Choisir 1-6. Quand ce nombre apparaît sur Duality Die, Hope ou clear Stress.'},
+    {type:'action',name:'Not This Time',cost:'3 Hope',source:'Wizard',desc:'Hope Feature : adversaire Far relance attaque/dégâts.'},
+  ]
+};
+
+const ANCESTRY_FEATURES = {
+  'Aetheris':[
+    {type:'passive',name:'Hallowed Aura',cost:'1/long rest',source:'Aetheris',desc:'Allié Close : roll Fear devient roll Hope.'},
+    {type:'passive',name:'Celestial Wings',cost:'',source:'Aetheris',desc:'Vol. 1/scène, Hope au lieu de marquer Armor Slot.'},
+  ],
+  'Clank':[
+    {type:'passive',name:'Purposeful Design',cost:'',source:'Clank',desc:'+2 permanent à 1 Experience.'},
+    {type:'passive',name:'Efficient',cost:'',source:'Clank',desc:'Short Rest = peut prendre un Long Rest move.'},
+  ],
+  'Drakona':[
+    {type:'passive',name:'Scales',cost:'',source:'Drakona',desc:'Severe damage : marquer Stress pour -1 HP marqué.'},
+    {type:'action',name:'Elemental Breath',cost:'',source:'Drakona',desc:'Instinct, Very Close, d8 mag, Proficiency.'},
+  ],
+  'Earthkin':[
+    {type:'passive',name:'Stoneskin',cost:'',source:'Earthkin',desc:'+1 Armor Score et damage thresholds permanent.'},
+    {type:'passive',name:'Immovable',cost:'',source:'Earthkin',desc:'Au sol : impossible de te soulever ou déplacer.'},
+  ],
+  'Elfe':[
+    {type:'reaction',name:'Quick Reactions',cost:'1 Stress',source:'Elfe',desc:'Advantage sur reaction roll.'},
+    {type:'passive',name:'Celestial Trance',cost:'',source:'Elfe',desc:'Repos : downtime move supplémentaire.'},
+  ],
+  'Emberkin':[
+    {type:'passive',name:'Fireproof',cost:'',source:'Emberkin',desc:'Immunité aux flammes.'},
+    {type:'action',name:'Ignition',cost:'1 Stress',source:'Emberkin',desc:'Arme en flammes jusqu\'en fin de scène. +1d6 aux dégâts.'},
+  ],
+  'Faun':[
+    {type:'passive',name:'Caprine Leap',cost:'',source:'Faun',desc:'Sauter jusqu\'à Close range sans roll.'},
+    {type:'action',name:'Kick',cost:'1 Stress',source:'Faun',desc:'Sur attaque Melee réussie : 1d6 bonus + repousse Very Close.'},
+  ],
+  'Firbolg':[
+    {type:'action',name:'Charge',cost:'1 Stress',source:'Firbolg',desc:'Sprint Far→Melee : 1d6 phys à tous en Melee.'},
+    {type:'passive',name:'Unshakable',cost:'',source:'Firbolg',desc:'Quand marquer Stress, 1d6 : sur 6, ne pas le marquer.'},
+  ],
+  'Fungril':[
+    {type:'passive',name:'Fungril Network',cost:'',source:'Fungril',desc:'Instinct DC10 : communiquer avec Fungrils à distance.'},
+    {type:'passive',name:'Death Connection',cost:'1 Stress',source:'Fungril',desc:'Toucher cadavre récent : extraire 1 souvenir.'},
+  ],
+  'Galapa':[
+    {type:'passive',name:'Shell',cost:'',source:'Galapa',desc:'Bonus damage thresholds = Proficiency.'},
+    {type:'action',name:'Retract',cost:'1 Stress',source:'Galapa',desc:'Résistance phys mais désavantage + immobile.'},
+  ],
+  'Gnome':[
+    {type:'passive',name:'Gnome Feature 1',cost:'',source:'Gnome',desc:'(Voir fiche de personnage)'},
+    {type:'passive',name:'Gnome Feature 2',cost:'',source:'Gnome',desc:'(Voir fiche de personnage)'},
+  ],
+  'Gobelin':[
+    {type:'passive',name:'Surefooted',cost:'',source:'Gobelin',desc:'Ignore désavantage sur Agility Rolls.'},
+    {type:'reaction',name:'Danger Sense',cost:'1 Stress, 1/rest',source:'Gobelin',desc:'Forcer adversaire à relancer attaque.'},
+  ],
+  'Géant':[
+    {type:'passive',name:'Endurance',cost:'',source:'Géant',desc:'+1 HP slot à la création.'},
+    {type:'passive',name:'Reach',cost:'',source:'Géant',desc:'Portées Melee traitées comme Very Close.'},
+  ],
+  'Halfling':[
+    {type:'passive',name:'Luckbringer',cost:'',source:'Halfling',desc:'Début de session : tout le groupe gagne 1 Hope.'},
+    {type:'passive',name:'Internal Compass',cost:'',source:'Halfling',desc:'Roll un 1 sur dé Hope : relancer.'},
+  ],
+  'Humain':[
+    {type:'passive',name:'High Stamina',cost:'',source:'Humain',desc:'+1 Stress slot à la création.'},
+    {type:'reaction',name:'Adaptability',cost:'1 Stress',source:'Humain',desc:'Échec avec Experience : relancer.'},
+  ],
+  'Infernis':[
+    {type:'passive',name:'Fearless',cost:'2 Stress',source:'Infernis',desc:'Roll avec Fear : transformer en roll avec Hope.'},
+    {type:'passive',name:'Dread Visage',cost:'',source:'Infernis',desc:'Advantage sur intimidation.'},
+  ],
+  'Katari':[
+    {type:'passive',name:'Feline Instincts',cost:'2 Hope',source:'Katari',desc:'Agility Roll : relancer dé Hope.'},
+    {type:'action',name:'Retracting Claws',cost:'',source:'Katari',desc:'Agility Roll Melee : réussite = cible Vulnerable.'},
+  ],
+  'Nain':[
+    {type:'passive',name:'Thick Skin',cost:'',source:'Nain',desc:'Minor damage : marquer Stress au lieu de 1 HP.'},
+    {type:'action',name:'Increased Fortitude',cost:'2 Hope',source:'Nain',desc:'Réduire dégâts physiques de moitié.'},
+  ],
+  'Orc':[
+    {type:'passive',name:'Sturdy',cost:'',source:'Orc',desc:'À 1 HP : attaques contre toi avec désavantage.'},
+    {type:'action',name:'Tusks',cost:'1 Hope',source:'Orc',desc:'Sur attaque Melee réussie : +1d6 dégâts.'},
+  ],
+  'Ribbet':[
+    {type:'passive',name:'Amphibious',cost:'',source:'Ribbet',desc:'Respirer et se mouvoir sous l\'eau.'},
+    {type:'action',name:'Long Tongue',cost:'1 Stress',source:'Ribbet',desc:'Close, Finesse, 1d4 phys.'},
+  ],
+  'Simiah':[
+    {type:'passive',name:'Natural Climber',cost:'',source:'Simiah',desc:'Advantage escalade/équilibre.'},
+    {type:'passive',name:'Nimble',cost:'',source:'Simiah',desc:'+1 Evasion permanent.'},
+  ],
+  'Skykin':[
+    {type:'action',name:'Gale Force',cost:'1 Stress',source:'Skykin',desc:'Bourrasque : transporter soi/allié Very Close jusqu\'à Very Far.'},
+    {type:'action',name:'Eye of the Storm',cost:'2 Hope',source:'Skykin',desc:'+1 Evasion pour soi/allié Melee jusqu\'à Severe damage.'},
+  ],
+  'Tidekin':[
+    {type:'passive',name:'Tidekin Feature 1',cost:'',source:'Tidekin',desc:'(Voir fiche de personnage)'},
+    {type:'passive',name:'Tidekin Feature 2',cost:'',source:'Tidekin',desc:'(Voir fiche de personnage)'},
+  ],
+};
+
+const COMMUNITY_FEATURES = {
+  'Duneborne':[{type:'passive',name:'Duneborne Feature',cost:'',source:'Duneborne',desc:'(Voir fiche)'}],
+  'Freeborne':[{type:'passive',name:'Freeborne Feature',cost:'',source:'Freeborne',desc:'(Voir fiche)'}],
+  'Frostborne':[{type:'passive',name:'Frostborne Feature',cost:'',source:'Frostborne',desc:'(Voir fiche)'}],
+  'Hearthborne':[{type:'passive',name:'Hearthborne Feature',cost:'',source:'Hearthborne',desc:'(Voir fiche)'}],
+  'Loreborne':[{type:'passive',name:'Well-Read',cost:'',source:'Loreborne',desc:'Advantage sur rolls histoire/culture/politique.'}],
+  'Orderborne':[{type:'passive',name:'Dedicated',cost:'1/rest',source:'Orderborne',desc:'3 valeurs. Si incarnées : 1d6 comme dé Hope.'}],
+  'Reborne':[{type:'passive',name:'Reborne Feature',cost:'',source:'Reborne',desc:'(Voir fiche)'}],
+  'Ridgeborne':[{type:'passive',name:'Steady',cost:'',source:'Ridgeborne',desc:'Advantage traverser falaises/survie.'}],
+  'Seaborne':[{type:'passive',name:'Know the Tide',cost:'',source:'Seaborne',desc:'Token par Fear roll (max = niv). Dépenser : +1 par token.'}],
+  'Slyborne':[{type:'passive',name:'Scoundrel',cost:'',source:'Slyborne',desc:'Advantage négociation criminels/mensonges/planque.'}],
+  'Wanderborne':[{type:'action',name:'Nomadic Pack',cost:'1 Hope, 1/session',source:'Wanderborne',desc:'Sortir un objet utile du sac (avec le MJ).'}],
+  'Warborne':[{type:'passive',name:'Warborne Feature',cost:'',source:'Warborne',desc:'(Voir fiche)'}],
+  'Wildborne':[{type:'passive',name:'Lightfoot',cost:'',source:'Wildborne',desc:'Mouvement silencieux. Advantage pour se déplacer sans bruit.'}],
 };
 
 const STORAGE_CHARS = 'daggerheart-chars-v1';
@@ -876,7 +1133,7 @@ function addWeaponRow(w={}) {
   div.className = 'dyn-row';
   div.dataset.wid = id;
   div.innerHTML = `
-    <div class="dyn-row-hd"><span>Arme</span><button class="tiny danger btn-del-row">✕</button></div>
+    <div class="dyn-row-hd"><span>Arme</span><button class="tiny btn-move btn-move-up">&#x25B2;</button><button class="tiny btn-move btn-move-down">&#x25BC;</button><button class="tiny danger btn-del-row">✕</button></div>
     <div class="form-row cols2">
       <div class="form-field"><label>Nom</label><input type="text" class="w-name" value="${esc(w.name||'')}"></div>
       <div class="form-field"><label>Type (ex: Primary · 2H)</label><input type="text" class="w-kind" value="${esc(w.kind||'')}"></div>
@@ -905,7 +1162,7 @@ function addWeaponRow(w={}) {
       </div>
       <div class="form-field"><label style="white-space:nowrap">Formule finale <span style="color:var(--muted);font-size:9px">(pas de prof.)</span></label><input type="checkbox" class="w-effective" ${w.effective?'checked':''}></div>
     </div>`;
-  div.querySelector('.btn-del-row').addEventListener('click',()=>div.remove());
+  wireRowButtons(div);
   rows.appendChild(div);
 }
 
@@ -917,12 +1174,12 @@ function addExpRow(e={}) {
   const div = document.createElement('div');
   div.className = 'dyn-row';
   div.innerHTML = `
-    <div class="dyn-row-hd"><span>Expérience</span><button class="tiny danger btn-del-row">✕</button></div>
+    <div class="dyn-row-hd"><span>Expérience</span><button class="tiny btn-move btn-move-up">&#x25B2;</button><button class="tiny btn-move btn-move-down">&#x25BC;</button><button class="tiny danger btn-del-row">✕</button></div>
     <div class="form-row cols2">
       <div class="form-field"><label>Nom</label><input type="text" class="e-name" value="${esc(e.name||'')}"></div>
       <div class="form-field"><label>Bonus</label><input type="number" class="e-val" value="${e.val||2}" min="1" max="10"></div>
     </div>`;
-  div.querySelector('.btn-del-row').addEventListener('click',()=>div.remove());
+  wireRowButtons(div);
   rows.appendChild(div);
 }
 
@@ -931,7 +1188,7 @@ function addFeatureRow(f={}) {
   const div = document.createElement('div');
   div.className = 'dyn-row';
   div.innerHTML = `
-    <div class="dyn-row-hd"><span>Feature</span><button class="tiny danger btn-del-row">✕</button></div>
+    <div class="dyn-row-hd"><span>Feature</span><button class="tiny btn-move btn-move-up">&#x25B2;</button><button class="tiny btn-move btn-move-down">&#x25BC;</button><button class="tiny danger btn-del-row">✕</button></div>
     <div class="form-row cols3">
       <div class="form-field">
         <label>Type</label>
@@ -949,7 +1206,7 @@ function addFeatureRow(f={}) {
       <div class="form-field"><label>Bonus jet <span style="color:var(--muted);font-weight:400">(ex: +1, laisser vide si aucun)</span></label><input type="number" class="f-roll-bonus" value="${f.rollBonus||''}" placeholder="0" min="-5" max="5" style="width:70px"></div>
     </div>
     <div class="form-field"><label>Description</label><textarea class="f-desc" rows="2">${esc(f.desc||'')}</textarea></div>`;
-  div.querySelector('.btn-del-row').addEventListener('click',()=>div.remove());
+  wireRowButtons(div);
   rows.appendChild(div);
 }
 
@@ -958,14 +1215,14 @@ function addDomainRow(d={}) {
   const div = document.createElement('div');
   div.className = 'dyn-row';
   div.innerHTML = `
-    <div class="dyn-row-hd"><span>Domain Card</span><button class="tiny danger btn-del-row">✕</button></div>
+    <div class="dyn-row-hd"><span>Domain Card</span><button class="tiny btn-move btn-move-up">&#x25B2;</button><button class="tiny btn-move btn-move-down">&#x25BC;</button><button class="tiny danger btn-del-row">✕</button></div>
     <div class="form-row cols3">
       <div class="form-field"><label>Nom</label><input type="text" class="d-name" value="${esc(d.name||'')}"></div>
       <div class="form-field"><label>Source (ex: Blade · Niv. 1)</label><input type="text" class="d-source" value="${esc(d.source||'')}"></div>
       <div class="form-field"><label>Bonus jet <span style="color:var(--muted);font-weight:400">(laisser vide si aucun)</span></label><input type="number" class="d-roll-bonus" value="${d.rollBonus||''}" placeholder="0" min="-5" max="5" style="width:70px"></div>
     </div>
     <div class="form-field"><label>Description</label><textarea class="d-desc" rows="2">${esc(d.desc||'')}</textarea></div>`;
-  div.querySelector('.btn-del-row').addEventListener('click',()=>div.remove());
+  wireRowButtons(div);
   rows.appendChild(div);
 }
 
@@ -974,12 +1231,12 @@ function addToggleRow(t={}) {
   const div = document.createElement('div');
   div.className = 'dyn-row';
   div.innerHTML = `
-    <div class="dyn-row-hd"><span>Ressource active</span><button class="tiny danger btn-del-row">✕</button></div>
+    <div class="dyn-row-hd"><span>Ressource active</span><button class="tiny btn-move btn-move-up">&#x25B2;</button><button class="tiny btn-move btn-move-down">&#x25BC;</button><button class="tiny danger btn-del-row">✕</button></div>
     <div class="form-row cols2">
       <div class="form-field"><label>Nom affiché</label><input type="text" class="t-label" value="${esc(t.label||'')}"></div>
       <div class="form-field"><label>Description / coût</label><input type="text" class="t-sub" value="${esc(t.sub||'')}"></div>
     </div>`;
-  div.querySelector('.btn-del-row').addEventListener('click',()=>div.remove());
+  wireRowButtons(div);
   rows.appendChild(div);
 }
 
@@ -988,14 +1245,22 @@ function addChargeRow(c={}) {
   const div = document.createElement('div');
   div.className = 'dyn-row';
   div.innerHTML = `
-    <div class="dyn-row-hd"><span>Charge</span><button class="tiny danger btn-del-row">✕</button></div>
+    <div class="dyn-row-hd"><span>Charge</span><button class="tiny btn-move btn-move-up">&#x25B2;</button><button class="tiny btn-move btn-move-down">&#x25BC;</button><button class="tiny danger btn-del-row">✕</button></div>
     <div class="form-row cols3">
       <div class="form-field"><label>Nom</label><input type="text" class="c-name" value="${esc(c.name||'')}"></div>
       <div class="form-field"><label>Description</label><input type="text" class="c-sub" value="${esc(c.sub||'')}"></div>
       <div class="form-field"><label>Max</label><input type="number" class="c-max" value="${c.max||1}" min="1" max="20"></div>
     </div>`;
-  div.querySelector('.btn-del-row').addEventListener('click',()=>div.remove());
+  wireRowButtons(div);
   rows.appendChild(div);
+}
+
+function wireRowButtons(div) {
+  div.querySelector('.btn-del-row').addEventListener('click',()=>div.remove());
+  const up = div.querySelector('.btn-move-up');
+  const down = div.querySelector('.btn-move-down');
+  if (up) up.addEventListener('click',()=>{ const prev = div.previousElementSibling; if (prev) div.parentNode.insertBefore(div,prev); });
+  if (down) down.addEventListener('click',()=>{ const next = div.nextElementSibling; if (next) div.parentNode.insertBefore(next,div); });
 }
 
 function clearFormRows() {
@@ -1030,6 +1295,18 @@ function populateFormFromDef(def) {
   document.getElementById('f-hope-max').value = def.maxHope||6;
   document.getElementById('f-thr-minor').value = def.thresholdMinor||6;
   document.getElementById('f-thr-severe').value = def.thresholdSevere||13;
+  const level = parseInt(document.getElementById('f-level').value)||1;
+  if (def.thresholdMinorBase) {
+    document.getElementById('f-thr-minor-base').value = def.thresholdMinorBase;
+  } else if (def.thresholdMinor) {
+    document.getElementById('f-thr-minor-base').value = def.thresholdMinor - level;
+  }
+  if (def.thresholdSevereBase) {
+    document.getElementById('f-thr-severe-base').value = def.thresholdSevereBase;
+  } else if (def.thresholdSevere) {
+    document.getElementById('f-thr-severe-base').value = def.thresholdSevere - level;
+  }
+  updateThrCalc();
   document.getElementById('f-connections').value = def.connectionsText||'';
   document.getElementById('f-color').value = def.color || '#e8c84a';
   (def.weapons||[]).forEach(w=>addWeaponRow(w));
@@ -1114,6 +1391,8 @@ function readFormValues() {
     maxHope: parseInt(document.getElementById('f-hope-max').value)||6,
     thresholdMinor: parseInt(document.getElementById('f-thr-minor').value)||6,
     thresholdSevere: parseInt(document.getElementById('f-thr-severe').value)||13,
+    thresholdMinorBase: parseInt(document.getElementById('f-thr-minor-base').value)||0,
+    thresholdSevereBase: parseInt(document.getElementById('f-thr-severe-base').value)||0,
     weapons, experiences, features, domains, togglesDef, chargesDef,
     connectionsText: document.getElementById('f-connections').value.trim(),
     color: document.getElementById('f-color').value || '#e8c84a'
@@ -2641,6 +2920,137 @@ function updateSubclassOptions() {
   if (txt) { txt.style.display = 'none'; txt.value = ''; }
 }
 
+function applyClassDefaults() {
+  if (editingCharId) return;
+  const cls = readCombo('f-class-sel', 'f-class');
+  const d = CLASS_DEFAULTS[cls];
+  const hint = document.getElementById('class-domain-hint');
+  if (d) {
+    document.getElementById('f-hp-max').value = d.hp;
+    document.getElementById('f-evasion').value = d.evasion;
+    document.getElementById('f-stress-max').value = 6;
+    document.getElementById('f-hope-max').value = 6;
+    if (hint) { hint.textContent = 'Domaines : ' + d.domains.join(' & '); hint.style.display = ''; }
+  } else {
+    if (hint) hint.style.display = 'none';
+  }
+  updateFeaturePresets();
+}
+
+function buildWeaponPresetOptions() {
+  const sel = document.getElementById('weapon-preset-sel');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Preset arme...</option>';
+  Object.entries(WEAPON_PRESETS).forEach(([group, weapons]) => {
+    const og = document.createElement('optgroup');
+    og.label = group;
+    weapons.forEach((w, i) => {
+      const o = document.createElement('option');
+      o.value = group + ':' + i;
+      o.textContent = w.name + (w.feature ? ' (' + w.feature.split(':')[0].trim() + ')' : '');
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+}
+
+function buildArmorPresetOptions() {
+  const sel = document.getElementById('armor-preset-sel');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Preset armure...</option>';
+  ARMOR_PRESETS.forEach((a, i) => {
+    const o = document.createElement('option');
+    o.value = i;
+    o.textContent = a.name + ' (M' + a.thrMinor + '/S' + a.thrSevere + ', ' + a.score + ' slots' + (a.feature ? ', ' + a.feature.split(':')[0].trim() : '') + ')';
+    sel.appendChild(o);
+  });
+}
+
+function updateFeaturePresets() {
+  const sel = document.getElementById('feature-preset-sel');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Preset feature...</option>';
+  const cls = readCombo('f-class-sel', 'f-class');
+  const race = readCombo('f-race-sel', 'f-race');
+  const race2 = readCombo('f-race2-sel', 'f-race2');
+  const comm = readCombo('f-community-sel', 'f-community');
+  if (FEATURE_PRESETS[cls]) {
+    const og = document.createElement('optgroup');
+    og.label = cls;
+    FEATURE_PRESETS[cls].forEach((f, i) => {
+      const o = document.createElement('option');
+      o.value = 'class:' + i;
+      o.textContent = f.name + (f.cost ? ' (' + f.cost + ')' : '');
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  }
+  [race, race2].filter(Boolean).forEach(r => {
+    if (ANCESTRY_FEATURES[r]) {
+      const og = document.createElement('optgroup');
+      og.label = r;
+      ANCESTRY_FEATURES[r].forEach((f, i) => {
+        const o = document.createElement('option');
+        o.value = 'ancestry:' + r + ':' + i;
+        o.textContent = f.name + (f.cost ? ' (' + f.cost + ')' : '');
+        og.appendChild(o);
+      });
+      sel.appendChild(og);
+    }
+  });
+  if (COMMUNITY_FEATURES[comm]) {
+    const og = document.createElement('optgroup');
+    og.label = comm;
+    COMMUNITY_FEATURES[comm].forEach((f, i) => {
+      const o = document.createElement('option');
+      o.value = 'community:' + comm + ':' + i;
+      o.textContent = f.name + (f.cost ? ' (' + f.cost + ')' : '');
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  }
+}
+
+function onWeaponPresetAdd() {
+  const sel = document.getElementById('weapon-preset-sel');
+  if (!sel || !sel.value) return;
+  const [group, idx] = sel.value.split(':');
+  const w = WEAPON_PRESETS[group] && WEAPON_PRESETS[group][parseInt(idx)];
+  if (w) addWeaponRow({...w, effective:false});
+  sel.value = '';
+}
+
+function onArmorPresetChange() {
+  const sel = document.getElementById('armor-preset-sel');
+  if (!sel || sel.value === '') return;
+  const a = ARMOR_PRESETS[parseInt(sel.value)];
+  if (a) {
+    document.getElementById('f-armor-name').value = a.name;
+    document.getElementById('f-armor-max').value = a.score;
+    document.getElementById('f-thr-minor-base').value = a.thrMinor;
+    document.getElementById('f-thr-severe-base').value = a.thrSevere;
+    updateThrCalc();
+  }
+  sel.value = '';
+}
+
+function onFeaturePresetAdd() {
+  const sel = document.getElementById('feature-preset-sel');
+  if (!sel || !sel.value) return;
+  const parts = sel.value.split(':');
+  let f;
+  if (parts[0] === 'class') {
+    const cls = readCombo('f-class-sel', 'f-class');
+    f = FEATURE_PRESETS[cls] && FEATURE_PRESETS[cls][parseInt(parts[1])];
+  } else if (parts[0] === 'ancestry') {
+    f = ANCESTRY_FEATURES[parts[1]] && ANCESTRY_FEATURES[parts[1]][parseInt(parts[2])];
+  } else if (parts[0] === 'community') {
+    f = COMMUNITY_FEATURES[parts[1]] && COMMUNITY_FEATURES[parts[1]][parseInt(parts[2])];
+  }
+  if (f) addFeatureRow({...f});
+  sel.value = '';
+}
+
 function setupFormAutoCalc() {
   ['f-thr-minor-base','f-thr-severe-base','f-level'].forEach(id=>{
     const el = document.getElementById(id);
@@ -2662,8 +3072,18 @@ function setupFormAutoCalc() {
       if (sel.value === '__autre__') { txt.style.display = ''; txt.focus(); }
       else { txt.style.display = 'none'; txt.value = ''; }
     }
-    if (sel.id === 'f-class-sel') updateSubclassOptions();
+    if (sel.id === 'f-class-sel') { updateSubclassOptions(); applyClassDefaults(); }
+    if (sel.id === 'f-race-sel' || sel.id === 'f-race2-sel' || sel.id === 'f-community-sel') updateFeaturePresets();
   });
+  const armorPreset = document.getElementById('armor-preset-sel');
+  if (armorPreset) armorPreset.addEventListener('change', onArmorPresetChange);
+  const wpnPresetBtn = document.getElementById('btn-add-weapon-preset');
+  if (wpnPresetBtn) wpnPresetBtn.addEventListener('click', onWeaponPresetAdd);
+  const featPresetBtn = document.getElementById('btn-add-feature-preset');
+  if (featPresetBtn) featPresetBtn.addEventListener('click', onFeaturePresetAdd);
+  buildWeaponPresetOptions();
+  buildArmorPresetOptions();
+  updateFeaturePresets();
 }
 
 function applyFormAccent() {
