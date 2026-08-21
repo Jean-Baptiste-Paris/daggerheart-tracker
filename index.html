@@ -189,6 +189,10 @@ details>.body{padding:14px}
 .feature .tag.passive{color:#8aa1ad}
 .feature .tag.action{color:var(--accent);border:1px solid var(--accent-dark)}
 .feature .tag.reaction{color:#b58dd6;border:1px solid #4a3556}
+.feature .btn-activate{font-size:11px;padding:3px 10px;border-radius:3px;cursor:pointer;border:1px solid var(--accent-dark);background:var(--accent-dark);color:var(--text);float:right;margin-left:8px;transition:opacity .2s}
+.feature .btn-activate:hover{opacity:.8}
+.feature .btn-activate.used{opacity:.4;cursor:default;background:var(--panel-3);border-color:var(--border);color:var(--muted)}
+.feature .cost-summary{font-size:11px;color:var(--muted);margin-left:4px}
 .weapon-card{background:var(--panel-2);border:1px solid var(--border);border-radius:4px;padding:10px;margin-bottom:8px}
 .weapon-card:last-child{margin-bottom:0}
 .weapon-card .wtitle{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:4px}
@@ -1136,7 +1140,7 @@ function makeFreshState(def) {
   const charges = Object.fromEntries((def.chargesDef||[]).map(c=>[c.key,c.max]));
   return {
     hp: def.maxHp, stress: 0, hope: def.maxHope, armor: def.armorMax,
-    gold: 0, toggles, charges,
+    gold: 0, toggles, charges, activations: {},
     conditions: { cache: false, entrave: false, vulnerable: false },
     inventory: [],
     layout: {
@@ -1657,6 +1661,22 @@ function effectiveWeaponFormula(weapon, prof) {
    TRACKER — BUILD HTML
    ============================================================ */
 
+function parseCost(costStr) {
+  if (!costStr) return null;
+  const r = {hope:0, stress:0, limited:null};
+  const parts = costStr.split(',').map(s=>s.trim());
+  let hasResource = false;
+  for (const p of parts) {
+    const hm = p.match(/^(\d+)\s*Hope$/i);
+    if (hm) { r.hope = parseInt(hm[1]); hasResource = true; continue; }
+    const sm = p.match(/^(\d+)\s*Stress$/i);
+    if (sm) { r.stress = parseInt(sm[1]); hasResource = true; continue; }
+    const lm = p.match(/^(\d+)\/(rest|long\s*rest|session|scene)$/i);
+    if (lm) { r.limited = lm[2].toLowerCase().replace(/\s+/g,' '); hasResource = true; continue; }
+  }
+  return hasResource ? r : null;
+}
+
 function buildTrackerHTML(def) {
   const raceLabel = def.race2 ? `${def.race} / ${def.race2}` : def.race;
   const subtitle = [raceLabel, def.class, def.subclass].filter(Boolean).join(' · ');
@@ -1699,19 +1719,31 @@ function buildTrackerHTML(def) {
     </div>`).join('');
 
   // Features
-  const featuresHTML = (def.features||[]).map(f=>`
-    <div class="feature">
+  const featuresHTML = (def.features||[]).map((f,i)=>{
+    const pc = parseCost(f.cost);
+    const actKey = 'feat_'+i;
+    const used = state.activations[actKey];
+    const btn = pc ? `<button class="btn-activate${used?' used':''}" data-act-key="${actKey}" data-act-cost="${esc(f.cost)}">${used?'Utilisé':'Activer'}</button>` : '';
+    return `<div class="feature">
+      ${btn}
       <span class="tag ${f.type}">${esc(f.cost||f.type)}</span>
       <b>${esc(f.name)}</b>${f.source?` <span class="hint">— ${esc(f.source)}</span>`:''}
       <div class="desc">${esc(f.desc)}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   // Domains
-  const domainsHTML = (def.domains||[]).map(d=>`
-    <div class="feature">
+  const domainsHTML = (def.domains||[]).map((d,i)=>{
+    const pc = parseCost(d.cost);
+    const actKey = 'dom_'+i;
+    const used = state.activations[actKey];
+    const btn = pc ? `<button class="btn-activate${used?' used':''}" data-act-key="${actKey}" data-act-cost="${esc(d.cost)}">${used?'Utilisé':'Activer'}</button>` : '';
+    return `<div class="feature">
+      ${btn}
       <h3>${esc(d.name)} <span class="hint">— ${esc(d.source)}</span></h3>
       <div class="desc">${esc(d.desc)}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   // Experiences display
   const expsHTML = def.experiences && def.experiences.length ? `
@@ -1933,6 +1965,7 @@ function mergeState(saved, def) {
     charges: Object.fromEntries((def.chargesDef||[]).map(c=>[
       c.key, clamp(saved.charges?.[c.key] ?? c.max, 0, c.max)
     ])),
+    activations: saved.activations || {},
     conditions: Object.assign({ cache: false, entrave: false, vulnerable: false }, saved.conditions||{}),
     inventory: Array.isArray(saved.inventory) ? saved.inventory : [],
     layout: mergeLayout(saved.layout, def)
@@ -2222,13 +2255,36 @@ function initTrackerEvents() {
     saveStateNow();
   });
 
+  // Activation buttons (features / domain cards)
+  document.querySelectorAll('.btn-activate').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const key = btn.dataset.actKey;
+      if (state.activations[key]) return;
+      const cost = parseCost(btn.dataset.actCost);
+      if (!cost) return;
+      if (cost.hope > 0 && state.hope < cost.hope) { flash('Pas assez de Hope ('+cost.hope+' requis).'); return; }
+      if (cost.stress > 0 && state.stress + cost.stress > MAX.stress) { flash('Pas de place pour '+cost.stress+' Stress.'); return; }
+      if (cost.hope > 0) { state.hope = clamp(state.hope - cost.hope, 0, MAX.hope); renderCounter('hope'); }
+      if (cost.stress > 0) { state.stress = clamp(state.stress + cost.stress, 0, MAX.stress); renderCounter('stress'); }
+      if (cost.limited) { state.activations[key] = true; btn.classList.add('used'); btn.textContent = 'Utilisé'; }
+      saveStateNow();
+      const parts = [];
+      if (cost.hope > 0) parts.push('-'+cost.hope+' Hope');
+      if (cost.stress > 0) parts.push('+'+cost.stress+' Stress');
+      if (cost.limited) parts.push('('+cost.limited+')');
+      flash(parts.join(', '));
+    });
+  });
+
   // Rest
   const btnRecharge=document.getElementById('btn-recharge');
   if (btnRecharge) btnRecharge.addEventListener('click',()=>{
     state.hp=MAX.hp; state.stress=0; state.hope=MAX.hope; state.armor=MAX.armor;
+    state.activations = {};
     (charDef.togglesDef||[]).forEach(t=>{ state.toggles[t.key]=false; });
     (charDef.chargesDef||[]).forEach(c=>{ state.charges[c.key]=c.max; });
-    renderTracker(); saveStateNow(); flash('Tout rechargé.');
+    document.getElementById('tracker-content').innerHTML = buildTrackerHTML(charDef);
+    renderTracker(); initTrackerEvents(); saveStateNow(); flash('Tout rechargé.');
   });
 
   // Export / Import / Reset
@@ -2241,7 +2297,9 @@ function initTrackerEvents() {
   if (fileImport) fileImport.addEventListener('change',e=>{ doImportFromFile(e.target.files[0]); e.target.value=''; });
   if (btnReset) btnReset.addEventListener('click',()=>{
     if (!confirm('Réinitialiser à la fiche par défaut ?')) return;
-    state=makeFreshState(charDef); renderTracker(); saveStateNow(); flash('Reset effectué.');
+    state=makeFreshState(charDef);
+    document.getElementById('tracker-content').innerHTML = buildTrackerHTML(charDef);
+    renderTracker(); initTrackerEvents(); saveStateNow(); flash('Reset effectué.');
   });
 
   // Keyboard shortcut
