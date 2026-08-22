@@ -1411,10 +1411,11 @@ function addDomainRow(d={}) {
   div.className = 'dyn-row';
   div.innerHTML = `
     <div class="dyn-row-hd"><span>Domain Card</span><button class="tiny btn-move btn-move-up">&#x25B2;</button><button class="tiny btn-move btn-move-down">&#x25BC;</button><button class="tiny danger btn-del-row">✕</button></div>
-    <div class="form-row cols3">
+    <div class="form-row cols4">
       <div class="form-field"><label>Nom</label><input type="text" class="d-name" value="${esc(d.name||'')}"></div>
       <div class="form-field"><label>Source (ex: Blade · Niv. 1)</label><input type="text" class="d-source" value="${esc(d.source||'')}"></div>
-      <div class="form-field"><label>Bonus jet <span style="color:var(--muted);font-weight:400">(laisser vide si aucun)</span></label><input type="number" class="d-roll-bonus" value="${d.rollBonus||''}" placeholder="0" min="-5" max="5" style="width:70px"></div>
+      <div class="form-field"><label>Coût <span style="color:var(--muted);font-weight:400">(ex: 1 Hope, 1/rest)</span></label><input type="text" class="d-cost" value="${esc(d.cost||'')}" placeholder=""></div>
+      <div class="form-field"><label>Bonus jet</label><input type="number" class="d-roll-bonus" value="${d.rollBonus||''}" placeholder="0" min="-5" max="5" style="width:70px"></div>
     </div>
     <div class="form-field"><label>Description</label><textarea class="d-desc" rows="2">${esc(d.desc||'')}</textarea></div>`;
   wireRowButtons(div);
@@ -1548,6 +1549,7 @@ function readFormValues() {
   const domains = Array.from(document.querySelectorAll('#domains-rows .dyn-row')).map(row=>({
     name: row.querySelector('.d-name').value.trim(),
     source: row.querySelector('.d-source').value.trim(),
+    cost: row.querySelector('.d-cost').value.trim(),
     desc: row.querySelector('.d-desc').value.trim(),
     rollBonus: parseInt(row.querySelector('.d-roll-bonus').value)||0
   })).filter(d=>d.name);
@@ -1740,7 +1742,8 @@ function buildTrackerHTML(def) {
     const btn = pc ? `<button class="btn-activate${used?' used':''}" data-act-key="${actKey}" data-act-cost="${esc(d.cost)}">${used?'Utilisé':'Activer'}</button>` : '';
     return `<div class="feature">
       ${btn}
-      <h3>${esc(d.name)} <span class="hint">— ${esc(d.source)}</span></h3>
+      ${d.cost ? `<span class="tag action">${esc(d.cost)}</span>` : ''}
+      <b>${esc(d.name)}</b> <span class="hint">— ${esc(d.source)}</span>
       <div class="desc">${esc(d.desc)}</div>
     </div>`;
   }).join('');
